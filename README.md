@@ -188,6 +188,77 @@ on Cybersource Unified Checkout. The call is refused with `403` otherwise, and
 with `422` if combined with hosted card fields; no invoice is created when it is
 refused.
 
+## Hosted card fields
+
+Collect the card on your own page instead of sending the payer to the hosted
+checkout. The card number and security code are rendered by CyberSource inside
+iframes, so no card data reaches your DOM, your JavaScript or your servers —
+but your page owns the form, which moves you from **PCI SAQ A to SAQ A-EP**.
+Confirm that is acceptable to your acquirer before building.
+
+On your server, ask for a fields session:
+
+```ts
+const checkout = await getpayin.invoices.create({
+  firstName: 'Jane',
+  lastName: 'Doe',
+  email: 'jane@example.com',
+  orderTitle: 'Order #4120',
+  orderAmount: '250.00',
+  currency: 'EGP',
+  mode: 'fields',
+});
+
+// Safe to put in the page — it names this one payment and nothing else.
+const clientToken = checkout.fields!.clientToken;
+```
+
+In the browser, from the separate `/fields` entry point:
+
+```ts
+import { loadFields } from '@getpayin/getpayin/fields';
+
+const fields = await loadFields({
+  clientToken,
+  number: '#card-number',
+  securityCode: '#card-cvc',
+  styles: { input: { 'font-size': '16px', color: '#111' } },
+});
+
+const { amountMinor, currency } = await fields.mount();
+
+const result = await fields.pay({ expirationMonth: '04', expirationYear: '2030' });
+
+if (result.success) {
+  window.location.href = result.returnUrl!;
+}
+```
+
+`pay()` **resolves** for a decline as well as an approval — a refused card is an
+answer, not an exception — so branch on `result.success`. It rejects only when
+the attempt could not be completed at all.
+
+Every rejection carries a `code`. Treat `fields_unavailable`,
+`fields_unsupported`, `session_invalid` and `origin_not_allowed` as "stop and
+send the payer to `checkout.checkoutUrl`"; anything else concerns that attempt
+alone and can be retried on the same mounted fields.
+
+A few things worth knowing:
+
+- **`@getpayin/getpayin/fields` is a separate entry point on purpose.** The main
+  export is server-side and holds your `hashToken`; this one runs in the payer's
+  browser and must never see it. Importing one does not pull in the other.
+- **The SDK script is fetched from PayLink, not bundled here.** It is versioned
+  alongside the API it talks to, and the card iframes have to come from the
+  origin your capture context was issued for. Pass `apiBase` when your page is
+  not served from the same origin as PayLink.
+- **Apple Pay and Google Pay are not available on hosted fields.** Apple
+  requires the domain serving the button to be verified, and that domain is
+  PayLink's. Those payments stay on `checkoutUrl`, which comes back whatever the
+  mode.
+- Hosted fields need a **registered origin** on your integration and the feature
+  enabled for your account.
+
 ## Recurring mandates
 
 ```ts

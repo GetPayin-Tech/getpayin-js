@@ -33,8 +33,8 @@ export interface BillingAddress {
 
 /**
  * Parameters for `invoices.create`. `redirectionUrl` and `webhookUrl` must be
- * HTTPS URLs on the integration's registered domain; `paymentMode`, `iframe`
- * and `tokenize` are optional passthroughs that are sent to the API but
+ * HTTPS URLs on the integration's registered domain; `paymentMode`, `iframe`,
+ * `tokenize` and `mode` are optional passthroughs that are sent to the API but
  * excluded from the signature. Set `iframe: true` to have the API return a
  * checkout suitable for embedding.
  *
@@ -46,8 +46,14 @@ export interface BillingAddress {
  * still completes the payment and simply keeps no card. Charge the stored card
  * later with `cards.charge`.
  *
- * Because it is outside the signature, adopting it does not change the string
- * an existing integration signs.
+ * Set `mode: 'fields'` to collect the card on your own page instead. The result
+ * then carries a `fields` block whose `clientToken` drives
+ * `@getpayin/getpayin/fields`. It needs a registered origin, and it moves you
+ * from PCI SAQ A to SAQ A-EP because your page owns the form — wallets and
+ * saving a card stay on `checkoutUrl`.
+ *
+ * Because they are outside the signature, adopting any of them does not change
+ * the string an existing integration signs.
  */
 export interface CreateInvoiceParams {
   firstName: string;
@@ -66,6 +72,7 @@ export interface CreateInvoiceParams {
   paymentMode?: string;
   iframe?: boolean | number;
   tokenize?: boolean;
+  mode?: 'redirect' | 'fields';
 }
 
 /**
@@ -82,6 +89,24 @@ export interface CreateInvoiceResult {
   invoiceId: number;
   expiresAt: string;
   tokenizationId?: string;
+  fields?: HostedFieldsHandoff;
+}
+
+/**
+ * What a `mode: 'fields'` call returns for the browser half.
+ *
+ * `clientToken` is safe to put in the page: it names this one payment and nothing else, which is
+ * what stops a token lifted from one checkout being pointed at another. Pass it to `loadFields`
+ * from `@getpayin/getpayin/fields`. The `hashToken` must never reach the browser.
+ *
+ * `checkoutUrl` comes back whatever the mode and stays the fallback — for wallets, which hosted
+ * fields cannot offer, and for any browser that cannot run the fields.
+ */
+export interface HostedFieldsHandoff {
+  clientToken: string;
+  sdkUrl: string;
+  origin: string;
+  expiresAt: string;
 }
 
 export interface InvoiceRef {

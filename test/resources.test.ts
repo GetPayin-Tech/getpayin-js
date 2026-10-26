@@ -74,6 +74,38 @@ describe('invoices.create', () => {
     expect(result.tokenizationId).toBe('9f2c1b7a4e5d6');
   });
 
+  it('sends mode and maps the hosted fields handoff', async () => {
+    const { getpayin, calls } = client({
+      success: true,
+      data: {
+        checkout_url: 'https://pay/checkout',
+        invoice_id: 42,
+        expires_at: '2026-08-03T11:00:00Z',
+        fields: {
+          client_token: 'ct_abc',
+          sdk_url: 'https://pay/sdk/paylink-fields-v1.js',
+          origin: 'https://shop.example.com',
+          expires_at: '2026-08-03T11:00:00Z',
+        },
+      },
+    });
+
+    const result = await getpayin.invoices.create({
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'j@x.com',
+      orderTitle: 'Plan',
+      orderAmount: 100,
+      currency: 'USD',
+      mode: 'fields',
+    });
+
+    expect(bodyOf(calls[0]!).mode).toBe('fields');
+    expect(result.fields?.clientToken).toBe('ct_abc');
+    expect(result.fields?.origin).toBe('https://shop.example.com');
+    expect(result.checkoutUrl).toBe('https://pay/checkout');
+  });
+
   /** Absent whenever the account did not keep a card, so it must not appear as undefined noise. */
   it('omits the tokenization id when the API did not return one', async () => {
     const { getpayin } = client({
