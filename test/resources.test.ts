@@ -1,24 +1,24 @@
 import { describe, expect, it } from 'vitest';
-import { PaylinkClient } from '../src/client';
-import { PaylinkApiError } from '../src/errors';
+import { GetpayinClient } from '../src/client';
+import { GetpayinApiError } from '../src/errors';
 import { buildSignature } from '../src/signature';
 import { bodyOf, fakeFetch } from './helpers';
 
 const HASH = 'test_hash_token_abc123';
 
 function client(data: unknown): {
-  paylink: PaylinkClient;
+  getpayin: GetpayinClient;
   calls: ReturnType<typeof fakeFetch>['calls'];
 } {
   const { fetch, calls } = fakeFetch(() => ({ json: data }));
-  const paylink = new PaylinkClient({ publicToken: 'pub_token', hashToken: HASH, fetch });
+  const getpayin = new GetpayinClient({ publicToken: 'pub_token', hashToken: HASH, fetch });
 
-  return { paylink, calls };
+  return { getpayin, calls };
 }
 
 describe('invoices.create', () => {
   it('POSTs to v2 init with a signed body and maps the checkout result', async () => {
-    const { paylink, calls } = client({
+    const { getpayin, calls } = client({
       success: true,
       data: {
         checkout_url: 'https://pay/checkout',
@@ -27,7 +27,7 @@ describe('invoices.create', () => {
       },
     });
 
-    const result = await paylink.invoices.create({
+    const result = await getpayin.invoices.create({
       firstName: 'John',
       lastName: 'Doe',
       email: 'j@x.com',
@@ -50,14 +50,15 @@ describe('invoices.create', () => {
   });
 });
 
+
 describe('payments', () => {
   it('refund forwards the Idempotency-Key and maps refundAmount', async () => {
-    const { paylink, calls } = client({
+    const { getpayin, calls } = client({
       success: true,
       data: { invoice_id: 7, paid_status: 'refunded', auth_code: 'A1', refund_amount: 10.5 },
     });
 
-    const result = await paylink.payments.refund(
+    const result = await getpayin.payments.refund(
       { invoiceId: 7, amount: '10.50' },
       { idempotencyKey: 'idem-1' },
     );
@@ -74,22 +75,22 @@ describe('payments', () => {
   });
 
   it('void maps a null auth_code', async () => {
-    const { paylink } = client({
+    const { getpayin } = client({
       success: true,
       data: { invoice_id: 7, paid_status: 'voided', auth_code: null },
     });
-    const result = await paylink.payments.void({ invoiceId: 7 });
+    const result = await getpayin.payments.void({ invoiceId: 7 });
 
     expect(result).toEqual({ invoiceId: 7, paidStatus: 'voided', authCode: null });
   });
 
   it('settle POSTs invoice_id and amount in signed order', async () => {
-    const { paylink, calls } = client({
+    const { getpayin, calls } = client({
       success: true,
       data: { invoice_id: 7, paid_status: 'PAID', auth_code: 'A2' },
     });
 
-    const result = await paylink.payments.settle({ invoiceId: 7, amount: '50.00' });
+    const result = await getpayin.payments.settle({ invoiceId: 7, amount: '50.00' });
 
     expect(calls[0]?.url).toBe('https://pay.getpayin.com/api/integration/settle');
     const body = bodyOf(calls[0]!);
@@ -100,24 +101,24 @@ describe('payments', () => {
   });
 
   it('reverseAuthorization POSTs to the reverse-authorization path', async () => {
-    const { paylink, calls } = client({
+    const { getpayin, calls } = client({
       success: true,
       data: { invoice_id: 7, paid_status: 'UNPAID', auth_code: null },
     });
 
-    const result = await paylink.payments.reverseAuthorization({ invoiceId: 7 });
+    const result = await getpayin.payments.reverseAuthorization({ invoiceId: 7 });
 
     expect(calls[0]?.url).toBe('https://pay.getpayin.com/api/integration/reverse-authorization');
     expect(result.paidStatus).toBe('UNPAID');
   });
 
   it('checkStatus maps the current gateway status', async () => {
-    const { paylink, calls } = client({
+    const { getpayin, calls } = client({
       success: true,
       data: { invoice_id: 7, paid_status: 'PAID', auth_code: 'A3' },
     });
 
-    const result = await paylink.payments.checkStatus({ invoiceId: 7 });
+    const result = await getpayin.payments.checkStatus({ invoiceId: 7 });
 
     expect(calls[0]?.url).toBe('https://pay.getpayin.com/api/integration/check-status');
     expect(result).toEqual({ invoiceId: 7, paidStatus: 'PAID', authCode: 'A3' });
@@ -126,7 +127,7 @@ describe('payments', () => {
 
 describe('cards', () => {
   it('tokenize maps the nested card object to camelCase', async () => {
-    const { paylink, calls } = client({
+    const { getpayin, calls } = client({
       success: true,
       data: {
         token: 'tok_1',
@@ -135,7 +136,7 @@ describe('cards', () => {
       },
     });
 
-    const result = await paylink.cards.tokenize({
+    const result = await getpayin.cards.tokenize({
       firstName: 'A',
       lastName: 'B',
       cardNumber: '4111111111111111',
@@ -152,14 +153,14 @@ describe('cards', () => {
   });
 
   it('revoke returns the message even though the envelope has no data', async () => {
-    const { paylink } = client({ success: true, message: 'Token revoked.' });
-    const result = await paylink.cards.revoke({ cardToken: 'tok_1' });
+    const { getpayin } = client({ success: true, message: 'Token revoked.' });
+    const result = await getpayin.cards.revoke({ cardToken: 'tok_1' });
 
     expect(result).toEqual({ message: 'Token revoked.' });
   });
 
   it('charge maps the token-charge result and signs card_token first', async () => {
-    const { paylink, calls } = client({
+    const { getpayin, calls } = client({
       success: true,
       data: {
         invoice_id: 11,
@@ -171,7 +172,7 @@ describe('cards', () => {
       },
     });
 
-    const result = await paylink.cards.charge({
+    const result = await getpayin.cards.charge({
       cardToken: 'tok_1',
       initiator: 'merchant',
       firstName: 'A',
@@ -205,8 +206,8 @@ describe('cards', () => {
   });
 
   it('revoke falls back to a default message when the server sends none', async () => {
-    const { paylink } = client({ success: true, data: {} });
-    const result = await paylink.cards.revoke({ cardToken: 'tok_1' });
+    const { getpayin } = client({ success: true, data: {} });
+    const result = await getpayin.cards.revoke({ cardToken: 'tok_1' });
 
     expect(result).toEqual({ message: 'Token revoked.' });
   });
@@ -220,9 +221,9 @@ describe('cards', () => {
           'Card tokenization is not enabled for your account. Please contact the business team.',
       },
     }));
-    const paylink = new PaylinkClient({ publicToken: 'pub_token', hashToken: HASH, fetch });
+    const getpayin = new GetpayinClient({ publicToken: 'pub_token', hashToken: HASH, fetch });
 
-    const error = (await paylink.cards
+    const error = (await getpayin.cards
       .tokenize({
         firstName: 'A',
         lastName: 'B',
@@ -233,16 +234,16 @@ describe('cards', () => {
         address: 'a',
         city: 'c',
       })
-      .catch((e) => e)) as PaylinkApiError;
+      .catch((e) => e)) as GetpayinApiError;
 
-    expect(error).toBeInstanceOf(PaylinkApiError);
+    expect(error).toBeInstanceOf(GetpayinApiError);
     expect(error.isForbidden).toBe(true);
   });
 });
 
 describe('recurring', () => {
   it('status uses a GET with token+signature in the query (mandate-uid signature)', async () => {
-    const { paylink, calls } = client({
+    const { getpayin, calls } = client({
       success: true,
       data: {
         mandate_id: 'M1',
@@ -254,7 +255,7 @@ describe('recurring', () => {
       },
     });
 
-    const result = await paylink.recurring.status('M1');
+    const result = await getpayin.recurring.status('M1');
 
     const expectedSig = buildSignature(['M1'], HASH);
     expect(calls[0]?.method).toBe('GET');
@@ -270,7 +271,7 @@ describe('recurring', () => {
   });
 
   it('create POSTs to recurring init and maps the mandate result', async () => {
-    const { paylink, calls } = client({
+    const { getpayin, calls } = client({
       success: true,
       data: {
         checkout_url: 'https://pay/checkout',
@@ -280,7 +281,7 @@ describe('recurring', () => {
       },
     });
 
-    const result = await paylink.recurring.create(
+    const result = await getpayin.recurring.create(
       {
         firstName: 'Sam',
         lastName: 'Doe',
@@ -309,13 +310,13 @@ describe('recurring', () => {
 
   it('pause and resume POST to their action paths', async () => {
     const paused = client({ success: true, data: { paused: true, status: 'paused' } });
-    expect(await paused.paylink.recurring.pause('M1')).toEqual({ paused: true, status: 'paused' });
+    expect(await paused.getpayin.recurring.pause('M1')).toEqual({ paused: true, status: 'paused' });
     expect(paused.calls[0]?.url).toBe(
       'https://pay.getpayin.com/api/v2/integration/recurring/M1/pause',
     );
 
     const resumed = client({ success: true, data: { resumed: true, status: 'active' } });
-    expect(await resumed.paylink.recurring.resume('M1')).toEqual({
+    expect(await resumed.getpayin.recurring.resume('M1')).toEqual({
       resumed: true,
       status: 'active',
     });
@@ -325,20 +326,20 @@ describe('recurring', () => {
   });
 
   it('URL-encodes a mandate id with path-unsafe characters', async () => {
-    const { paylink, calls } = client({ success: true, data: { cancelled: true, status: 'x' } });
+    const { getpayin, calls } = client({ success: true, data: { cancelled: true, status: 'x' } });
 
-    await paylink.recurring.cancel('M/1 2');
+    await getpayin.recurring.cancel('M/1 2');
 
     expect(calls[0]?.url).toContain('/recurring/M%2F1%202/cancel');
   });
 
   it('cancel POSTs to the action path with a mandate-uid signature body', async () => {
-    const { paylink, calls } = client({
+    const { getpayin, calls } = client({
       success: true,
       data: { cancelled: true, status: 'cancelled' },
     });
 
-    const result = await paylink.recurring.cancel('M1');
+    const result = await getpayin.recurring.cancel('M1');
 
     expect(calls[0]?.method).toBe('POST');
     expect(calls[0]?.url).toBe('https://pay.getpayin.com/api/v2/integration/recurring/M1/cancel');
@@ -352,7 +353,7 @@ describe('recurring', () => {
 
 describe('vcc.charge', () => {
   it('maps the charge result', async () => {
-    const { paylink, calls } = client({
+    const { getpayin, calls } = client({
       success: true,
       data: {
         invoice_id: 9,
@@ -363,7 +364,7 @@ describe('vcc.charge', () => {
       },
     });
 
-    const result = await paylink.vcc.charge({
+    const result = await getpayin.vcc.charge({
       firstName: 'S',
       lastName: 'S',
       currencyId: 1,

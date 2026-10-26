@@ -1,9 +1,8 @@
 {
-  "name": "@getpayin/paylink",
+  "name": "@getpayin/getpayin",
   "version": "0.2.0",
-  "description": "Official server-side Node.js/TypeScript SDK for the PayLink payment integration API (checkouts, payment operations, card tokens, recurring mandates, webhook verification).",
+  "description": "Official server-side Node.js/TypeScript SDK for the GetPayin payment integration API (checkouts, payment operations, card tokens, recurring mandates, webhook verification).",
   "keywords": [
-    "paylink",
     "getpayin",
     "payments",
     "payment-gateway",
@@ -14,11 +13,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GetPayin-Tech/paylink-js.git"
+    "url": "git+https://github.com/GetPayin-Tech/getpayin-js.git"
   },
-  "homepage": "https://github.com/GetPayin-Tech/paylink-js#readme",
+  "homepage": "https://github.com/GetPayin-Tech/getpayin-js#readme",
   "bugs": {
-    "url": "https://github.com/GetPayin-Tech/paylink-js/issues"
+    "url": "https://github.com/GetPayin-Tech/getpayin-js/issues"
   },
   "publishConfig": {
     "access": "public",

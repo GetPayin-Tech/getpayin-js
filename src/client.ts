@@ -1,4 +1,4 @@
-import type { PaylinkClientConfig } from './config';
+import type { GetpayinClientConfig } from './config';
 import { resolveConfig } from './config';
 import { Cards } from './resources/cards';
 import { Invoices } from './resources/invoices';
@@ -8,7 +8,7 @@ import { Vcc } from './resources/vcc';
 import { Webhooks } from './webhooks';
 
 /**
- * The PayLink integration client. Construct once with your integration's
+ * The GetPayin integration client. Construct once with your integration's
  * `publicToken` and secret `hashToken`, then call the resource namespaces:
  *
  * - `invoices` — create checkouts.
@@ -19,10 +19,10 @@ import { Webhooks } from './webhooks';
  * - `webhooks` — verify inbound webhook signatures.
  *
  * @example
- * const paylink = new PaylinkClient({ publicToken, hashToken });
- * const { checkoutUrl } = await paylink.invoices.create({ ... });
+ * const getpayin = new GetpayinClient({ publicToken, hashToken });
+ * const { checkoutUrl } = await getpayin.invoices.create({ ... });
  */
-export class PaylinkClient {
+export class GetpayinClient {
   readonly invoices: Invoices;
 
   readonly payments: Payments;
@@ -35,7 +35,7 @@ export class PaylinkClient {
 
   readonly webhooks: Webhooks;
 
-  constructor(config: PaylinkClientConfig) {
+  constructor(config: GetpayinClientConfig) {
     const resolved = resolveConfig(config);
 
     this.invoices = new Invoices(resolved);

@@ -4,7 +4,7 @@
 
 **Do not open a public issue for a security problem.**
 
-Report it privately via [GitHub's private vulnerability reporting](https://github.com/GetPayin-Tech/paylink-js/security/advisories/new), or email **tech@getpayin.com**.
+Report it privately via [GitHub's private vulnerability reporting](https://github.com/GetPayin-Tech/getpayin-js/security/advisories/new), or email **tech@getpayin.com**.
 
 Please include the SDK version, a description of the impact, and a reproduction if you have one. We aim to acknowledge within 3 business days.
 
@@ -24,6 +24,6 @@ The client keeps `hashToken` as a non-enumerable property, so `JSON.stringify(cl
 
 ## Things this SDK does not do for you
 
-- **Webhook replay protection.** PayLink webhook signatures carry no timestamp or nonce, so a valid payload stays valid forever. Signature verification proves authenticity, not freshness. Pair `webhooks.verify()` with your own idempotency keyed on `invoice_id`.
+- **Webhook replay protection.** GetPayin webhook signatures carry no timestamp or nonce, so a valid payload stays valid forever. Signature verification proves authenticity, not freshness. Pair `webhooks.verify()` with your own idempotency keyed on `invoice_id`.
 - **PCI scope reduction.** `vcc.charge` and `cards.tokenize` accept raw PAN and CVV. Sending real card data through your server puts that server in PCI scope. Prefer the hosted checkout (`invoices.create`) or card tokens where possible.
-- **Error redaction.** `PaylinkApiError.raw` holds the API's response body verbatim so failures stay debuggable. If you forward errors to a third-party log or APM, review what that body can contain for your integration.
+- **Error redaction.** `GetpayinApiError.raw` holds the API's response body verbatim so failures stay debuggable. If you forward errors to a third-party log or APM, review what that body can contain for your integration.

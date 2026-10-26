@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        The SDK wraps the PayLink payment integration API. Requests that need a new API capability may depend on server-side work first.
+        The SDK wraps the GetPayin payment integration API. Requests that need a new API capability may depend on server-side work first.
   - type: textarea
     id: problem
     attributes:

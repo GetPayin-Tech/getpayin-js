@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { coerceToString } from '../src/coerce';
-import { PaylinkError } from '../src/errors';
+import { GetpayinError } from '../src/errors';
 
 describe('coerceToString', () => {
   it('passes strings through unchanged, including empty', () => {
@@ -30,12 +30,12 @@ describe('coerceToString', () => {
   });
 
   it('throws on non-finite numbers', () => {
-    expect(() => coerceToString(Number.NaN)).toThrow(PaylinkError);
-    expect(() => coerceToString(Number.POSITIVE_INFINITY)).toThrow(PaylinkError);
+    expect(() => coerceToString(Number.NaN)).toThrow(GetpayinError);
+    expect(() => coerceToString(Number.POSITIVE_INFINITY)).toThrow(GetpayinError);
   });
 
   it('throws on unsupported types', () => {
-    expect(() => coerceToString({})).toThrow(PaylinkError);
-    expect(() => coerceToString([1, 2])).toThrow(PaylinkError);
+    expect(() => coerceToString({})).toThrow(GetpayinError);
+    expect(() => coerceToString([1, 2])).toThrow(GetpayinError);
   });
 });

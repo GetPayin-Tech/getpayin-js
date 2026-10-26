@@ -1,12 +1,12 @@
 import { inspect } from 'node:util';
 import { describe, expect, it } from 'vitest';
-import { PaylinkClient } from '../src/client';
+import { GetpayinClient } from '../src/client';
 import { resolveConfig } from '../src/config';
 
 const SECRET = 'SUPER_SECRET_HASH_TOKEN';
 
-function newClient(): PaylinkClient {
-  return new PaylinkClient({ publicToken: 'pub_abc', hashToken: SECRET });
+function newClient(): GetpayinClient {
+  return new GetpayinClient({ publicToken: 'pub_abc', hashToken: SECRET });
 }
 
 describe('hashToken exposure', () => {
@@ -48,7 +48,7 @@ describe('hashToken exposure', () => {
 
   it('still signs correctly with the hidden secret', async () => {
     const calls: string[] = [];
-    const client = new PaylinkClient({
+    const client = new GetpayinClient({
       publicToken: 'pub_abc',
       hashToken: SECRET,
       fetch: async (_url, init) => {

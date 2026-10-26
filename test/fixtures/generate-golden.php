@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Generates golden signature vectors that prove the JS SDK computes signatures
- * byte-for-byte identical to the PayLink server. This uses the SAME primitive
+ * byte-for-byte identical to the GetPayin server. This uses the SAME primitive
  * the server uses — base64_encode(hash_hmac('sha256', implode('', $values),
  * $hashToken, true)) — with NO Laravel/DB dependency.
  *

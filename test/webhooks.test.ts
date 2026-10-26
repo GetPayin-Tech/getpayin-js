@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PaylinkError, PaylinkSignatureError } from '../src/errors';
+import { GetpayinError, GetpayinSignatureError } from '../src/errors';
 import { buildSignature } from '../src/signature';
 import { WebhookEventType } from '../src/types';
 import type { WebhookPayload } from '../src/types';
@@ -50,31 +50,31 @@ describe('Webhooks.verify', () => {
     const payload = payloadFor('invoice.paid');
     payload.invoice_status = 'VOIDED';
 
-    expect(() => webhooks.verify(payload)).toThrow(PaylinkSignatureError);
+    expect(() => webhooks.verify(payload)).toThrow(GetpayinSignatureError);
   });
 
   it('throws when the signature is missing', () => {
     const payload = payloadFor('invoice.paid');
     delete payload.signature;
 
-    expect(() => webhooks.verify(payload)).toThrow(PaylinkSignatureError);
+    expect(() => webhooks.verify(payload)).toThrow(GetpayinSignatureError);
   });
 
   it('throws when verified with the wrong hashToken', () => {
     expect(() => webhooks.verify(payloadFor('invoice.paid'), { hashToken: 'wrong' })).toThrow(
-      PaylinkSignatureError,
+      GetpayinSignatureError,
     );
   });
 
-  it('throws PaylinkError on non-JSON string input', () => {
-    expect(() => webhooks.verify('not json{')).toThrow(PaylinkError);
+  it('throws GetpayinError on non-JSON string input', () => {
+    expect(() => webhooks.verify('not json{')).toThrow(GetpayinError);
   });
 
   it('rejects an added optional field absent from the signed invoice.paid vector', () => {
     const payload = payloadFor('invoice.paid');
     payload.mandate_id = 'sneaky';
 
-    expect(() => webhooks.verify(payload)).toThrow(PaylinkSignatureError);
+    expect(() => webhooks.verify(payload)).toThrow(GetpayinSignatureError);
   });
 });
 
@@ -114,7 +114,7 @@ describe('signed-field membership is an either/or', () => {
       signature: buildSignature(values, HASH_TOKEN),
     };
 
-    expect(() => webhooks.verify(payload)).toThrow(PaylinkSignatureError);
+    expect(() => webhooks.verify(payload)).toThrow(GetpayinSignatureError);
   });
 });
 

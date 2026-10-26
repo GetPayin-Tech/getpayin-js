@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FetchLike } from '../src/config';
-import { PaylinkApiError, PaylinkConnectionError } from '../src/errors';
+import { GetpayinApiError, GetpayinConnectionError } from '../src/errors';
 import { execute } from '../src/http';
 import { fakeConfig, fakeFetch } from './helpers';
 
@@ -50,7 +50,7 @@ describe('execute', () => {
     expect(calls[0]?.headers['Idempotency-Key']).toBe('key-123');
   });
 
-  it('throws PaylinkApiError with message and status on a non-2xx response', async () => {
+  it('throws GetpayinApiError with message and status on a non-2xx response', async () => {
     const { fetch } = fakeFetch(() => ({
       status: 422,
       json: { success: false, message: 'Invalid signature.' },
@@ -60,14 +60,14 @@ describe('execute', () => {
       method: 'POST',
       path: '/x',
       body: {},
-    }).catch((e) => e)) as PaylinkApiError;
+    }).catch((e) => e)) as GetpayinApiError;
 
-    expect(error).toBeInstanceOf(PaylinkApiError);
+    expect(error).toBeInstanceOf(GetpayinApiError);
     expect(error.status).toBe(422);
     expect(error.message).toBe('Invalid signature.');
   });
 
-  it('throws PaylinkApiError on a 200 body with success:false', async () => {
+  it('throws GetpayinApiError on a 200 body with success:false', async () => {
     const { fetch } = fakeFetch(() => ({
       status: 200,
       json: { success: false, message: 'nope', errors: { x: ['y'] } },
@@ -77,13 +77,13 @@ describe('execute', () => {
       method: 'POST',
       path: '/x',
       body: {},
-    }).catch((e) => e)) as PaylinkApiError;
+    }).catch((e) => e)) as GetpayinApiError;
 
-    expect(error).toBeInstanceOf(PaylinkApiError);
+    expect(error).toBeInstanceOf(GetpayinApiError);
     expect(error.errors).toEqual({ x: ['y'] });
   });
 
-  it('surfaces a feature-disabled 403 as PaylinkApiError with status, message, and isForbidden', async () => {
+  it('surfaces a feature-disabled 403 as GetpayinApiError with status, message, and isForbidden', async () => {
     const { fetch } = fakeFetch(() => ({
       status: 403,
       json: {
@@ -97,9 +97,9 @@ describe('execute', () => {
       method: 'POST',
       path: '/x',
       body: {},
-    }).catch((e) => e)) as PaylinkApiError;
+    }).catch((e) => e)) as GetpayinApiError;
 
-    expect(error).toBeInstanceOf(PaylinkApiError);
+    expect(error).toBeInstanceOf(GetpayinApiError);
     expect(error.status).toBe(403);
     expect(error.isForbidden).toBe(true);
     expect(error.message).toContain('not enabled');
@@ -118,7 +118,7 @@ describe('execute', () => {
       method: 'POST',
       path: '/x',
       body: {},
-    }).catch((e) => e)) as PaylinkApiError;
+    }).catch((e) => e)) as GetpayinApiError;
 
     expect(error.isForbidden).toBe(true);
     expect(error.message).toBe('Recurring payments is disabled for this company.');
@@ -133,7 +133,7 @@ describe('execute', () => {
       method: 'POST',
       path: '/x',
       body: {},
-    }).catch((e) => e)) as PaylinkApiError;
+    }).catch((e) => e)) as GetpayinApiError;
 
     expect(error.isIdempotencyConflict).toBe(true);
     expect(error.message).toBe('dup');
@@ -148,19 +148,19 @@ describe('execute', () => {
       method: 'POST',
       path: '/x',
       body: {},
-    }).catch((e) => e)) as PaylinkApiError;
+    }).catch((e) => e)) as GetpayinApiError;
 
     expect(error.message).toBe('nested dup');
   });
 
-  it('wraps network failures in PaylinkConnectionError', async () => {
+  it('wraps network failures in GetpayinConnectionError', async () => {
     const fetch: FetchLike = async () => {
       throw new Error('ECONNREFUSED');
     };
 
     await expect(
       execute(fakeConfig({ fetch }), { method: 'POST', path: '/x', body: {} }),
-    ).rejects.toBeInstanceOf(PaylinkConnectionError);
+    ).rejects.toBeInstanceOf(GetpayinConnectionError);
   });
 
   it('does not send the request when the caller signal is already aborted', async () => {
@@ -176,10 +176,10 @@ describe('execute', () => {
       path: '/api/integration/refund',
       body: {},
       signal: AbortSignal.abort(),
-    }).catch((e) => e)) as PaylinkConnectionError;
+    }).catch((e) => e)) as GetpayinConnectionError;
 
     expect(sent).toBe(false);
-    expect(error).toBeInstanceOf(PaylinkConnectionError);
+    expect(error).toBeInstanceOf(GetpayinConnectionError);
     expect(error.message).toContain('aborted before it was sent');
   });
 
@@ -196,13 +196,13 @@ describe('execute', () => {
       path: '/x',
       body: {},
       signal: controller.signal,
-    }).catch((e) => e)) as PaylinkConnectionError;
+    }).catch((e) => e)) as GetpayinConnectionError;
 
-    expect(error).toBeInstanceOf(PaylinkConnectionError);
+    expect(error).toBeInstanceOf(GetpayinConnectionError);
     expect(error.message).toContain('failed');
   });
 
-  it('times out and throws PaylinkConnectionError', async () => {
+  it('times out and throws GetpayinConnectionError', async () => {
     const fetch: FetchLike = (_url, init) =>
       new Promise((_resolve, reject) => {
         init.signal?.addEventListener('abort', () => reject(new Error('aborted')));
@@ -212,9 +212,9 @@ describe('execute', () => {
       method: 'POST',
       path: '/slow',
       body: {},
-    }).catch((e) => e)) as PaylinkConnectionError;
+    }).catch((e) => e)) as GetpayinConnectionError;
 
-    expect(error).toBeInstanceOf(PaylinkConnectionError);
+    expect(error).toBeInstanceOf(GetpayinConnectionError);
     expect(error.message).toContain('timed out');
   });
 });
