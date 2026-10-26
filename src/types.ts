@@ -33,10 +33,21 @@ export interface BillingAddress {
 
 /**
  * Parameters for `invoices.create`. `redirectionUrl` and `webhookUrl` must be
- * HTTPS URLs on the integration's registered domain; `paymentMode` and `iframe`
- * are optional passthroughs that are sent to the API but excluded from the
- * signature. Set `iframe: true` to have the API return a checkout suitable for
- * embedding.
+ * HTTPS URLs on the integration's registered domain; `paymentMode`, `iframe`
+ * and `tokenize` are optional passthroughs that are sent to the API but
+ * excluded from the signature. Set `iframe: true` to have the API return a
+ * checkout suitable for embedding.
+ *
+ * Set `tokenize: true` to keep the payer's card as well as charging it. The
+ * payment is unchanged — one checkout, one authorization, the same invoice
+ * webhooks — and the card is vaulted off that same authorization, so there is
+ * no second hold and no second visit. The payer ticks a "save my card" consent
+ * on the checkout; it governs the card, not the sale, so leaving it unticked
+ * still completes the payment and simply keeps no card. Charge the stored card
+ * later with `cards.charge`.
+ *
+ * Because it is outside the signature, adopting it does not change the string
+ * an existing integration signs.
  */
 export interface CreateInvoiceParams {
   firstName: string;
@@ -54,12 +65,23 @@ export interface CreateInvoiceParams {
   orderDetails?: string;
   paymentMode?: string;
   iframe?: boolean | number;
+  tokenize?: boolean;
 }
 
+/**
+ * The ways to complete a payment that `invoices.create` hands back.
+ *
+ * `tokenizationId` is present only when the call asked to keep the payer's card
+ * (`tokenize: true`) and the account is allowed to. It names the run opened
+ * against this payment; the card itself arrives on the `card_token.created`
+ * webhook once the payment is approved, and a run that ends without one raises
+ * `card_token.failed`. Correlate either to this order by `invoiceId`.
+ */
 export interface CreateInvoiceResult {
   checkoutUrl: string;
   invoiceId: number;
   expiresAt: string;
+  tokenizationId?: string;
 }
 
 export interface InvoiceRef {
@@ -207,7 +229,7 @@ export interface ResumeMandateResult {
   status: string;
 }
 
-/** Every webhook event type PayLink can deliver. */
+/** Every webhook event type GetPayin can deliver. */
 export const WebhookEventType = {
   InvoicePaid: 'invoice.paid',
   InvoiceNotPaid: 'invoice.not_paid',
@@ -234,7 +256,7 @@ export const WebhookEventType = {
 
 export type WebhookEventName = (typeof WebhookEventType)[keyof typeof WebhookEventType];
 
-/** The raw webhook body as delivered by PayLink (snake_case JSON). */
+/** The raw webhook body as delivered by GetPayin (snake_case JSON). */
 export interface WebhookPayload {
   event: string;
   event_triggered_at?: string;

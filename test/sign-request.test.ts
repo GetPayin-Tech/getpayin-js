@@ -168,6 +168,23 @@ describe('buildSignedBody — body construction rules', () => {
     expect(withIframe.signature).toBe(withoutIframe.signature);
   });
 
+  /** Laravel's `boolean` rule accepts "1"/"0", not "true"/"false". */
+  it('sends tokenize in the body but excludes it from the signature', () => {
+    const base = {
+      firstName: 'A',
+      lastName: 'B',
+      email: 'a@b.com',
+      orderTitle: 'T',
+      orderAmount: 1,
+      currency: 'USD',
+    };
+    const withTokenize = create(INVOICE_CREATE, { ...base, tokenize: true });
+    const withoutTokenize = create(INVOICE_CREATE, base);
+
+    expect(withTokenize.tokenize).toBe('1');
+    expect(withTokenize.signature).toBe(withoutTokenize.signature);
+  });
+
   it('appends the US state block (us_state, postal_code) after city', () => {
     const body = create(VCC_CHARGE, {
       firstName: 'S',

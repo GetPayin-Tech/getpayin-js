@@ -8,6 +8,7 @@ interface RawCheckout {
   checkout_url: string;
   invoice_id: number;
   expires_at: string;
+  tokenization_id?: string;
 }
 
 export class Invoices {
@@ -16,6 +17,11 @@ export class Invoices {
   /**
    * Create an invoice and return a temporary signed checkout URL
    * (`POST /api/v2/integration/init`). Redirect the payer to `checkoutUrl`.
+   *
+   * Pass `tokenize: true` to keep the payer's card as well as charging it; the
+   * result then carries a `tokenizationId` and the card arrives on the
+   * `card_token.created` webhook. Refused with 403 when the account is not
+   * allowed to store cards, and with 422 when combined with hosted fields.
    */
   async create(
     params: CreateInvoiceParams,
@@ -36,10 +42,16 @@ export class Invoices {
       signal: overrides?.signal,
     });
 
-    return {
+    const result: CreateInvoiceResult = {
       checkoutUrl: data.checkout_url,
       invoiceId: data.invoice_id,
       expiresAt: String(data.expires_at),
     };
+
+    if (data.tokenization_id !== undefined && data.tokenization_id !== null) {
+      result.tokenizationId = String(data.tokenization_id);
+    }
+
+    return result;
   }
 }

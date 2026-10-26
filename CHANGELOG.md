@@ -9,6 +9,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Optional `tokenize` field on `invoices.create` (`tokenize?: boolean`), and `tokenizationId` on the result. Keeps the payer's card as well as charging it — one checkout, one authorization — instead of running a separate `cards.tokenize` and taking a second hold. Like `paymentMode` and `iframe` it is an unsigned passthrough, so adopting it does not change the string an existing integration signs; a golden-signature fixture pins that. The payer's "save my card" consent governs the card, not the sale: unticked, the payment still completes and no card is kept.
 - Optional `iframe` field on `invoices.create` (`iframe?: boolean | number`). Like `paymentMode`, it is an unsigned passthrough — sent in the request body but excluded from the HMAC signature. Set `iframe: true` to request a checkout suitable for embedding.
 - Retry with exponential backoff and full jitter for transient failures (429, 5xx, network errors, timeouts), honoring `Retry-After`. Only replay-safe requests are retried — GETs, calls carrying an `Idempotency-Key`, and pure reads such as `payments.checkStatus`. Charges are never replayed.
 - `maxRetries` client option (default `2`; `0` disables).

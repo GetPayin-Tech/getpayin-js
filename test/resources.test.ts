@@ -48,8 +48,55 @@ describe('invoices.create', () => {
       expiresAt: '2026-08-03T11:00:00Z',
     });
   });
-});
 
+  it('sends tokenize and surfaces the tokenization id', async () => {
+    const { getpayin, calls } = client({
+      success: true,
+      data: {
+        checkout_url: 'https://pay/checkout',
+        invoice_id: 42,
+        expires_at: '2026-08-03T11:00:00Z',
+        tokenization_id: '9f2c1b7a4e5d6',
+      },
+    });
+
+    const result = await getpayin.invoices.create({
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'j@x.com',
+      orderTitle: 'Plan',
+      orderAmount: 100,
+      currency: 'USD',
+      tokenize: true,
+    });
+
+    expect(bodyOf(calls[0]!).tokenize).toBe('1');
+    expect(result.tokenizationId).toBe('9f2c1b7a4e5d6');
+  });
+
+  /** Absent whenever the account did not keep a card, so it must not appear as undefined noise. */
+  it('omits the tokenization id when the API did not return one', async () => {
+    const { getpayin } = client({
+      success: true,
+      data: {
+        checkout_url: 'https://pay/checkout',
+        invoice_id: 42,
+        expires_at: '2026-08-03T11:00:00Z',
+      },
+    });
+
+    const result = await getpayin.invoices.create({
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'j@x.com',
+      orderTitle: 'Plan',
+      orderAmount: 100,
+      currency: 'USD',
+    });
+
+    expect(result).not.toHaveProperty('tokenizationId');
+  });
+});
 
 describe('payments', () => {
   it('refund forwards the Idempotency-Key and maps refundAmount', async () => {

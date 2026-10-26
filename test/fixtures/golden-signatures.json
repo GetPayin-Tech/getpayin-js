@@ -39,6 +39,29 @@
             "expected": "HpF+SI9LirGLrMLvVeFVbgxg4P+reftqQoBd3PEGc9M="
         },
         {
+            "name": "invoices.create with tokenize (unsigned passthrough)",
+            "endpoint": "INVOICE_CREATE",
+            "input": {
+                "firstName": "Jane",
+                "lastName": "Roe",
+                "email": "jane@example.com",
+                "orderTitle": "Basic",
+                "orderAmount": "100.00",
+                "currency": "EGP",
+                "tokenize": true
+            },
+            "values": [
+                "Jane",
+                "Roe",
+                "jane@example.com",
+                "Basic",
+                "100.00",
+                "EGP"
+            ],
+            "hashToken": "test_hash_token_abc123",
+            "expected": "TSN92zc8DASlsgxV8jRgAIkDjeePVScATZ9y5ylfWUk="
+        },
+        {
             "name": "invoices.create minimal (optionals skipped)",
             "endpoint": "INVOICE_CREATE",
             "input": {

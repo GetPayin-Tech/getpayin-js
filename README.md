@@ -153,6 +153,41 @@ await getpayin.cards.revoke({ cardToken: token });
 For `US` and `CA` billing addresses, also pass the state fields the API
 requires: `usState` + `postalCode` (US) or `canadaState` + `postalCode` (CA).
 
+### Keeping the card on a payment the payer is already making
+
+When the payer is buying something, you do not need a separate run to store
+their card. Pass `tokenize: true` to `invoices.create` and one checkout does
+both — one authorization, the sale stands, and the card is vaulted off it.
+
+```ts
+const checkout = await getpayin.invoices.create({
+  firstName: 'Jane',
+  lastName: 'Doe',
+  email: 'jane@example.com',
+  orderTitle: 'Order #4120',
+  orderAmount: '250.00',
+  currency: 'EGP',
+  tokenize: true,
+});
+
+// checkout.tokenizationId identifies the run; the card itself arrives on the
+// card_token.created webhook, and you charge it later with cards.charge.
+```
+
+`tokenize` is **not part of the signature**, so an integration already live can
+start sending it without touching its signing code.
+
+The payer ticks a "save my card" consent on the checkout. It governs the card,
+not the sale: leaving it unticked still completes the payment and simply keeps
+no card. You hear either way — `card_token.created` carries the token, and a run
+that ends without one raises `card_token.failed`. Correlate both to the order by
+`invoice_id`.
+
+Requires card tokenization to be enabled for your account, and the account to be
+on Cybersource Unified Checkout. The call is refused with `403` otherwise, and
+with `422` if combined with hosted card fields; no invoice is created when it is
+refused.
+
 ## Recurring mandates
 
 ```ts
