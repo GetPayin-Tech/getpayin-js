@@ -1,5 +1,5 @@
 <!--
-Thanks for contributing to the PayLink JS SDK. Keep the description focused on
+Thanks for contributing to the GetPayin JS SDK. Keep the description focused on
 what changes and why. Delete any section that does not apply.
 -->
 

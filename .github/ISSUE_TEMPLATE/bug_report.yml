@@ -1,18 +1,18 @@
 name: Bug report
-description: Report a defect in the PayLink JS SDK
+description: Report a defect in the GetPayin JS SDK
 labels: ['bug']
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to file a bug. For a **security vulnerability**, do not use this form — report it privately per the [security policy](https://github.com/GetPayin-Tech/paylink-js/security/advisories/new).
+        Thanks for taking the time to file a bug. For a **security vulnerability**, do not use this form — report it privately per the [security policy](https://github.com/GetPayin-Tech/getpayin-js/security/advisories/new).
 
         Never paste a real `hashToken`, `publicToken`, card number, or CVV into this issue.
   - type: input
     id: sdk-version
     attributes:
       label: SDK version
-      description: The installed version of `@getpayin/paylink`.
+      description: The installed version of `@getpayin/getpayin`.
       placeholder: 0.1.0
     validations:
       required: true

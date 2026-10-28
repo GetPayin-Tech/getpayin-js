@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 /**
- * Build a PayLink signature: HMAC-SHA256 over the empty-string concatenation of
+ * Build a GetPayin signature: HMAC-SHA256 over the empty-string concatenation of
  * the already-stringified, already-ordered values, base64-encoded. This mirrors
  * `ExternalPaymentIntegration::buildSignatureString()` on the server
  * (`base64_encode(hash_hmac('sha256', implode('', $data), $hashToken, true))`).

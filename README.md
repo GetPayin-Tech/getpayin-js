@@ -1,10 +1,10 @@
-# @getpayin/paylink
+# @getpayin/getpayin
 
-[![CI](https://github.com/GetPayin-Tech/paylink-js/actions/workflows/ci.yml/badge.svg)](https://github.com/GetPayin-Tech/paylink-js/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/@getpayin/paylink.svg)](https://www.npmjs.com/package/@getpayin/paylink)
-[![install size](https://packagephobia.com/badge?p=@getpayin/paylink)](https://packagephobia.com/result?p=@getpayin/paylink)
+[![CI](https://github.com/GetPayin-Tech/getpayin-js/actions/workflows/ci.yml/badge.svg)](https://github.com/GetPayin-Tech/getpayin-js/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/@getpayin/getpayin.svg)](https://www.npmjs.com/package/@getpayin/getpayin)
+[![install size](https://packagephobia.com/badge?p=@getpayin/getpayin)](https://packagephobia.com/result?p=@getpayin/getpayin)
 
-Official **server-side** Node.js/TypeScript SDK for the PayLink payment
+Official **server-side** Node.js/TypeScript SDK for the GetPayin payment
 integration API. It wraps every integration endpoint with an idiomatic, typed
 API and computes the order-sensitive HMAC-SHA256 signatures for you, so you
 never have to build them by hand.
@@ -30,23 +30,23 @@ never have to build them by hand.
 ## Install
 
 ```bash
-npm install @getpayin/paylink
+npm install @getpayin/getpayin
 ```
 
 ## Quick start
 
 ```ts
-import { PaylinkClient } from '@getpayin/paylink';
+import { GetpayinClient } from '@getpayin/getpayin';
 
-const paylink = new PaylinkClient({
-  publicToken: process.env.PAYLINK_PUBLIC_TOKEN!,
-  hashToken: process.env.PAYLINK_HASH_TOKEN!, // secret — server-side only
+const getpayin = new GetpayinClient({
+  publicToken: process.env.GETPAYIN_PUBLIC_TOKEN!,
+  hashToken: process.env.GETPAYIN_HASH_TOKEN!, // secret — server-side only
   // baseUrl defaults to https://pay.getpayin.com
   // timeoutMs defaults to 30000 (per attempt)
   // maxRetries defaults to 2 (set 0 to disable retries)
 });
 
-const checkout = await paylink.invoices.create({
+const checkout = await getpayin.invoices.create({
   firstName: 'John',
   lastName: 'Doe',
   email: 'john@example.com',
@@ -54,7 +54,7 @@ const checkout = await paylink.invoices.create({
   orderAmount: '250.00', // pass amounts as strings to control the exact wire form
   currency: 'USD',
   redirectionUrl: 'https://shop.example.com/return',
-  webhookUrl: 'https://shop.example.com/webhooks/paylink',
+  webhookUrl: 'https://shop.example.com/webhooks/getpayin',
 });
 
 // Redirect the payer to the hosted checkout:
@@ -66,7 +66,7 @@ example rendering the hosted checkout inside an `<iframe>` on your own page
 instead of a full-page redirect:
 
 ```ts
-const embedded = await paylink.invoices.create({
+const embedded = await getpayin.invoices.create({
   firstName: 'John',
   lastName: 'Doe',
   email: 'john@example.com',
@@ -89,7 +89,7 @@ Then embed the returned checkout URL on your page. The `<iframe>` needs `allow="
 <script>
   addEventListener('message', function (e) {
     if (e.origin !== 'https://pay.getpayin.com') return; // your API base origin
-    if (!e.data || e.data.type !== 'paylink_payment') return;
+    if (!e.data || e.data.type !== 'getpayin_payment') return;
     window.location.href = e.data.success ? '/thank-you' : '/checkout?failed=1';
   });
 </script>
@@ -97,22 +97,22 @@ Then embed the returned checkout URL on your page. The `<iframe>` needs `allow="
 
 > The embedding page's origin must exactly match your integration's registered **Origin**, or the browser blocks framing and the message never arrives.
 
-Both credentials are issued in the PayLink dashboard under
+Both credentials are issued in the GetPayin dashboard under
 **Settings → Payment Integrations**. `publicToken` is sent on every request;
 `hashToken` is the secret used only to sign — it never leaves your server.
 
 ## Payment operations
 
 ```ts
-await paylink.payments.void({ invoiceId });
-await paylink.payments.settle({ invoiceId, amount: '50.00' });
-await paylink.payments.reverseAuthorization({ invoiceId });
+await getpayin.payments.void({ invoiceId });
+await getpayin.payments.settle({ invoiceId, amount: '50.00' });
+await getpayin.payments.reverseAuthorization({ invoiceId });
 
-const status = await paylink.payments.checkStatus({ invoiceId });
+const status = await getpayin.payments.checkStatus({ invoiceId });
 // { invoiceId, paidStatus, authCode }
 
 // Refunds are idempotent when you pass an idempotency key — safe to retry:
-const refund = await paylink.payments.refund(
+const refund = await getpayin.payments.refund(
   { invoiceId, amount: '10.50' },
   { idempotencyKey: 'refund-order-1234' },
 );
@@ -122,7 +122,7 @@ const refund = await paylink.payments.refund(
 ## Card tokenization
 
 ```ts
-const { token } = await paylink.cards.tokenize({
+const { token } = await getpayin.cards.tokenize({
   firstName: 'Jane',
   lastName: 'Doe',
   cardNumber: '4111111111111111',
@@ -134,7 +134,7 @@ const { token } = await paylink.cards.tokenize({
   city: 'Cairo',
 });
 
-await paylink.cards.charge({
+await getpayin.cards.charge({
   cardToken: token,
   initiator: 'merchant',
   firstName: 'Jane',
@@ -147,16 +147,122 @@ await paylink.cards.charge({
   city: 'Cairo',
 });
 
-await paylink.cards.revoke({ cardToken: token });
+await getpayin.cards.revoke({ cardToken: token });
 ```
 
 For `US` and `CA` billing addresses, also pass the state fields the API
 requires: `usState` + `postalCode` (US) or `canadaState` + `postalCode` (CA).
 
+### Keeping the card on a payment the payer is already making
+
+When the payer is buying something, you do not need a separate run to store
+their card. Pass `tokenize: true` to `invoices.create` and one checkout does
+both — one authorization, the sale stands, and the card is vaulted off it.
+
+```ts
+const checkout = await getpayin.invoices.create({
+  firstName: 'Jane',
+  lastName: 'Doe',
+  email: 'jane@example.com',
+  orderTitle: 'Order #4120',
+  orderAmount: '250.00',
+  currency: 'EGP',
+  tokenize: true,
+});
+
+// checkout.tokenizationId identifies the run; the card itself arrives on the
+// card_token.created webhook, and you charge it later with cards.charge.
+```
+
+`tokenize` is **not part of the signature**, so an integration already live can
+start sending it without touching its signing code.
+
+The payer ticks a "save my card" consent on the checkout. It governs the card,
+not the sale: leaving it unticked still completes the payment and simply keeps
+no card. You hear either way — `card_token.created` carries the token, and a run
+that ends without one raises `card_token.failed`. Correlate both to the order by
+`invoice_id`.
+
+Requires card tokenization to be enabled for your account, and the account to be
+on Cybersource Unified Checkout. The call is refused with `403` otherwise, and
+with `422` if combined with hosted card fields; no invoice is created when it is
+refused.
+
+## Hosted card fields
+
+Collect the card on your own page instead of sending the payer to the hosted
+checkout. The card number and security code are rendered by CyberSource inside
+iframes, so no card data reaches your DOM, your JavaScript or your servers —
+but your page owns the form, which moves you from **PCI SAQ A to SAQ A-EP**.
+Confirm that is acceptable to your acquirer before building.
+
+On your server, ask for a fields session:
+
+```ts
+const checkout = await getpayin.invoices.create({
+  firstName: 'Jane',
+  lastName: 'Doe',
+  email: 'jane@example.com',
+  orderTitle: 'Order #4120',
+  orderAmount: '250.00',
+  currency: 'EGP',
+  mode: 'fields',
+});
+
+// Safe to put in the page — it names this one payment and nothing else.
+const clientToken = checkout.fields!.clientToken;
+```
+
+In the browser, from the separate `/fields` entry point:
+
+```ts
+import { loadFields } from '@getpayin/getpayin/fields';
+
+const fields = await loadFields({
+  clientToken,
+  number: '#card-number',
+  securityCode: '#card-cvc',
+  styles: { input: { 'font-size': '16px', color: '#111' } },
+});
+
+const { amountMinor, currency } = await fields.mount();
+
+const result = await fields.pay({ expirationMonth: '04', expirationYear: '2030' });
+
+if (result.success) {
+  window.location.href = result.returnUrl!;
+}
+```
+
+`pay()` **resolves** for a decline as well as an approval — a refused card is an
+answer, not an exception — so branch on `result.success`. It rejects only when
+the attempt could not be completed at all.
+
+Every rejection carries a `code`. Treat `fields_unavailable`,
+`fields_unsupported`, `session_invalid` and `origin_not_allowed` as "stop and
+send the payer to `checkout.checkoutUrl`"; anything else concerns that attempt
+alone and can be retried on the same mounted fields.
+
+A few things worth knowing:
+
+- **`@getpayin/getpayin/fields` is a separate entry point on purpose.** The main
+  export is server-side and holds your `hashToken`; this one runs in the payer's
+  browser and must never see it. Importing one does not pull in the other.
+- **The SDK script is fetched from PayLink, not bundled here.** It is versioned
+  alongside the API it talks to, and the card iframes have to come from the
+  origin your capture context was issued for. Pass `apiBase` when your page is
+  not served from the same origin as PayLink.
+- **Apple Pay and Google Pay are not available on hosted fields.** Apple
+  requires the domain serving the button to be verified, and that domain is
+  PayLink's. Those payments stay on `checkoutUrl`, which comes back whatever the
+  mode.
+- Hosted fields need a **registered origin** on your integration and the feature
+  enabled for your account.
+
 ## Recurring mandates
 
 ```ts
-const mandate = await paylink.recurring.create(
+const mandate = await getpayin.recurring.create(
   {
     firstName: 'Sam',
     lastName: 'Doe',
@@ -172,10 +278,10 @@ const mandate = await paylink.recurring.create(
   { idempotencyKey: 'sub-signup-42' },
 );
 
-await paylink.recurring.status(mandate.mandateId);
-await paylink.recurring.pause(mandate.mandateId);
-await paylink.recurring.resume(mandate.mandateId);
-await paylink.recurring.cancel(mandate.mandateId);
+await getpayin.recurring.status(mandate.mandateId);
+await getpayin.recurring.pause(mandate.mandateId);
+await getpayin.recurring.resume(mandate.mandateId);
+await getpayin.recurring.cancel(mandate.mandateId);
 ```
 
 ## Idempotency
@@ -195,14 +301,14 @@ scoped per integration and capped at 64 characters.
 | `recurring.create` | the original mandate                   |
 
 ```ts
-await paylink.vcc.charge({/* card + order fields */}, { idempotencyKey: 'vcc-order-1234' });
-await paylink.cards.charge({/* token + order fields */}, { idempotencyKey: 'tok-order-1234' });
-await paylink.invoices.create({/* customer + order fields */}, { idempotencyKey: 'order-1234' });
+await getpayin.vcc.charge({/* card + order fields */}, { idempotencyKey: 'vcc-order-1234' });
+await getpayin.cards.charge({/* token + order fields */}, { idempotencyKey: 'tok-order-1234' });
+await getpayin.invoices.create({/* customer + order fields */}, { idempotencyKey: 'order-1234' });
 ```
 
 Reusing a key with a _different_ request — for example `recurring.create` with
 changed terms, or `payments.refund` for a different amount — is rejected as a
-conflict: a `PaylinkApiError` with `isIdempotencyConflict` set (HTTP 409). Only
+conflict: a `GetpayinApiError` with `isIdempotencyConflict` set (HTTP 409). Only
 the endpoints above honor the header.
 
 ## Verifying webhooks
@@ -212,18 +318,18 @@ signature with your `hashToken` and compares in constant time.
 
 ```ts
 import express from 'express';
-import { PaylinkClient, PaylinkSignatureError } from '@getpayin/paylink';
+import { GetpayinClient, GetpayinSignatureError } from '@getpayin/getpayin';
 
-const paylink = new PaylinkClient({ publicToken, hashToken });
+const getpayin = new GetpayinClient({ publicToken, hashToken });
 const app = express();
 
-app.post('/webhooks/paylink', express.json(), (req, res) => {
+app.post('/webhooks/getpayin', express.json(), (req, res) => {
   try {
-    const event = paylink.webhooks.verify(req.body);
+    const event = getpayin.webhooks.verify(req.body);
     // event.event, event.invoiceId, event.success, event.raw, ...
     res.sendStatus(200);
   } catch (error) {
-    if (error instanceof PaylinkSignatureError) {
+    if (error instanceof GetpayinSignatureError) {
       return res.sendStatus(400);
     }
     throw error;
@@ -231,27 +337,27 @@ app.post('/webhooks/paylink', express.json(), (req, res) => {
 });
 ```
 
-> PayLink webhook signatures carry no timestamp, so verification does not protect
+> GetPayin webhook signatures carry no timestamp, so verification does not protect
 > against replay. Pair it with your own idempotency keyed on `invoice_id`.
 
 ## Error handling
 
-Every failure is a subclass of `PaylinkError`:
+Every failure is a subclass of `GetpayinError`:
 
-| Error                    | When                                                                                                                                                                                                                                    |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PaylinkConfigError`     | Invalid client configuration (missing tokens, no `fetch`).                                                                                                                                                                              |
-| `PaylinkApiError`        | The API returned an error. Carries `status`, `errors`, `raw`, `retryAfterMs`, `isIdempotencyConflict` (409), `isRateLimited` (429), and `isForbidden` (403 — e.g. card tokenization or recurring payments not enabled for the account). |
-| `PaylinkSignatureError`  | A webhook signature did not verify.                                                                                                                                                                                                     |
-| `PaylinkConnectionError` | Network failure or timeout (no HTTP response).                                                                                                                                                                                          |
+| Error                     | When                                                                                                                                                                                                                                    |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GetpayinConfigError`     | Invalid client configuration (missing tokens, no `fetch`).                                                                                                                                                                              |
+| `GetpayinApiError`        | The API returned an error. Carries `status`, `errors`, `raw`, `retryAfterMs`, `isIdempotencyConflict` (409), `isRateLimited` (429), and `isForbidden` (403 — e.g. card tokenization or recurring payments not enabled for the account). |
+| `GetpayinSignatureError`  | A webhook signature did not verify.                                                                                                                                                                                                     |
+| `GetpayinConnectionError` | Network failure or timeout (no HTTP response).                                                                                                                                                                                          |
 
 ```ts
-import { PaylinkApiError } from '@getpayin/paylink';
+import { GetpayinApiError } from '@getpayin/getpayin';
 
 try {
-  await paylink.payments.refund({ invoiceId, amount: '10.00' });
+  await getpayin.payments.refund({ invoiceId, amount: '10.00' });
 } catch (error) {
-  if (error instanceof PaylinkApiError && error.isIdempotencyConflict) {
+  if (error instanceof GetpayinApiError && error.isIdempotencyConflict) {
     // a refund with this idempotency key already exists
   }
 }
@@ -277,7 +383,7 @@ So to make a refund safely retryable, pass an idempotency key — otherwise a
 failed refund surfaces immediately and is yours to handle:
 
 ```ts
-await paylink.payments.refund(
+await getpayin.payments.refund(
   { invoiceId, amount: '10.50' },
   { idempotencyKey: 'refund-order-1234' }, // now retried on 429/5xx
 );
@@ -286,17 +392,17 @@ await paylink.payments.refund(
 Tune or disable retries per client:
 
 ```ts
-new PaylinkClient({ publicToken, hashToken, maxRetries: 0 }); // off
+new GetpayinClient({ publicToken, hashToken, maxRetries: 0 }); // off
 ```
 
 `timeoutMs` applies to **each attempt**, so worst-case wall time is roughly
 `(maxRetries + 1) × timeoutMs` plus backoff. For requests the SDK will not
-replay, `PaylinkApiError.retryAfterMs` exposes the server's backoff hint so you
+replay, `GetpayinApiError.retryAfterMs` exposes the server's backoff hint so you
 can schedule your own retry:
 
 ```ts
 catch (error) {
-  if (error instanceof PaylinkApiError && error.isRateLimited) {
+  if (error instanceof GetpayinApiError && error.isRateLimited) {
     await enqueueAfter(error.retryAfterMs ?? 1000);
   }
 }
@@ -311,7 +417,7 @@ Numbers are accepted and stringified, but strings give you full control.
 ## API reference
 
 The full HTTP API — endpoints, fields, error codes, and test cards — is
-documented in the PayLink API reference:
+documented in the GetPayin API reference:
 <https://pay.getpayin.com/docs/payment_integration/index.html>
 
 ## Contributing

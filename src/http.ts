@@ -1,5 +1,5 @@
 import type { FetchResponse, ResolvedConfig } from './config';
-import { PaylinkApiError, PaylinkConnectionError } from './errors';
+import { GetpayinApiError, GetpayinConnectionError } from './errors';
 import { VERSION } from './version';
 
 /**
@@ -29,12 +29,12 @@ const RUNTIME_SUFFIX =
   typeof process !== 'undefined' && process.versions?.node ? ` node/${process.versions.node}` : '';
 
 /** Sent on every request so server-side logs can attribute traffic to a version. */
-export const USER_AGENT = `paylink-js/${VERSION}${RUNTIME_SUFFIX}`;
+export const USER_AGENT = `getpayin-js/${VERSION}${RUNTIME_SUFFIX}`;
 
 /**
  * Execute a request against the integration API and return the `data` payload
- * of the success envelope. Throws {@link PaylinkApiError} for non-success
- * responses and {@link PaylinkConnectionError} for network/timeout failures.
+ * of the success envelope. Throws {@link GetpayinApiError} for non-success
+ * responses and {@link GetpayinConnectionError} for network/timeout failures.
  *
  * Retries transient failures (429, 5xx, network errors, timeouts) with
  * exponential backoff and full jitter, honoring `Retry-After` when the server
@@ -47,9 +47,12 @@ export async function execute<T>(config: ResolvedConfig, options: RequestOptions
   // below would never run and the request would be sent anyway — for a payments
   // API that means charging after the caller has cancelled. Check up front.
   if (options.signal?.aborted) {
-    throw new PaylinkConnectionError(`Request to ${options.path} was aborted before it was sent.`, {
-      cause: options.signal.reason,
-    });
+    throw new GetpayinConnectionError(
+      `Request to ${options.path} was aborted before it was sent.`,
+      {
+        cause: options.signal.reason,
+      },
+    );
   }
 
   const maxAttempts = isReplaySafe(options) ? config.maxRetries + 1 : 1;
@@ -81,11 +84,11 @@ function isTransient(error: unknown, signal?: AbortSignal): boolean {
     return false;
   }
 
-  if (error instanceof PaylinkConnectionError) {
+  if (error instanceof GetpayinConnectionError) {
     return true;
   }
 
-  if (error instanceof PaylinkApiError) {
+  if (error instanceof GetpayinApiError) {
     return error.status === 429 || error.status >= 500;
   }
 
@@ -97,7 +100,7 @@ function isTransient(error: unknown, signal?: AbortSignal): boolean {
  * A server-sent `Retry-After` wins over the computed delay.
  */
 function backoffMs(config: ResolvedConfig, error: unknown, attempt: number): number {
-  if (error instanceof PaylinkApiError && error.retryAfterMs !== undefined) {
+  if (error instanceof GetpayinApiError && error.retryAfterMs !== undefined) {
     return Math.min(error.retryAfterMs, RETRY_MAX_DELAY_MS);
   }
 
@@ -120,7 +123,7 @@ function sleep(ms: number, signal: AbortSignal | undefined, path: string): Promi
     function onAbort(): void {
       cleanup();
       reject(
-        new PaylinkConnectionError(`Request to ${path} was aborted while waiting to retry.`, {
+        new GetpayinConnectionError(`Request to ${path} was aborted while waiting to retry.`, {
           cause: signal?.reason,
         }),
       );
@@ -170,13 +173,13 @@ async function attemptRequest<T>(config: ResolvedConfig, options: RequestOptions
     });
   } catch (error) {
     if (controller.signal.aborted && !options.signal?.aborted) {
-      throw new PaylinkConnectionError(
+      throw new GetpayinConnectionError(
         `Request to ${options.path} timed out after ${config.timeoutMs}ms.`,
         { cause: error },
       );
     }
 
-    throw new PaylinkConnectionError(`Request to ${options.path} failed.`, { cause: error });
+    throw new GetpayinConnectionError(`Request to ${options.path} failed.`, { cause: error });
   } finally {
     clearTimeout(timer);
     options.signal?.removeEventListener('abort', onAbort);
@@ -264,7 +267,7 @@ function toApiError(
   parsed: unknown,
   rawText: string,
   retryAfterMs?: number,
-): PaylinkApiError {
+): GetpayinApiError {
   const envelope =
     parsed !== null && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : {};
   const nestedData =
@@ -273,13 +276,13 @@ function toApiError(
       : {};
   const message =
     firstString(envelope.message, nestedData.message) ??
-    `PayLink API request failed with status ${status}.`;
+    `GetPayin API request failed with status ${status}.`;
   const errors =
     envelope.errors !== null && typeof envelope.errors === 'object'
       ? (envelope.errors as Record<string, unknown>)
       : undefined;
 
-  return new PaylinkApiError(message, { status, errors, raw: parsed ?? rawText, retryAfterMs });
+  return new GetpayinApiError(message, { status, errors, raw: parsed ?? rawText, retryAfterMs });
 }
 
 function firstString(...values: unknown[]): string | undefined {

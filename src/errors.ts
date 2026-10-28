@@ -1,11 +1,11 @@
 /**
  * Base class for every error thrown by the SDK. Catch this to handle any
- * PayLink failure generically, or narrow to a subclass for specific handling.
+ * GetPayin failure generically, or narrow to a subclass for specific handling.
  */
-export class PaylinkError extends Error {
+export class GetpayinError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
     super(message);
-    this.name = 'PaylinkError';
+    this.name = 'GetpayinError';
     if (options?.cause !== undefined) {
       this.cause = options.cause;
     }
@@ -17,10 +17,10 @@ export class PaylinkError extends Error {
  * Thrown when the client is constructed with missing or invalid configuration
  * (e.g. an empty public/hash token, or no `fetch` implementation available).
  */
-export class PaylinkConfigError extends PaylinkError {
+export class GetpayinConfigError extends GetpayinError {
   constructor(message: string) {
     super(message);
-    this.name = 'PaylinkConfigError';
+    this.name = 'GetpayinConfigError';
   }
 }
 
@@ -34,7 +34,7 @@ export class PaylinkConfigError extends PaylinkError {
  * such as card tokenization or recurring payments is not enabled for the
  * account) to branch on the common cases without matching on status codes.
  */
-export class PaylinkApiError extends PaylinkError {
+export class GetpayinApiError extends GetpayinError {
   readonly status: number;
 
   readonly errors?: Record<string, unknown>;
@@ -59,7 +59,7 @@ export class PaylinkApiError extends PaylinkError {
     },
   ) {
     super(message);
-    this.name = 'PaylinkApiError';
+    this.name = 'GetpayinApiError';
     this.status = params.status;
     this.errors = params.errors;
     this.raw = params.raw;
@@ -94,10 +94,10 @@ export class PaylinkApiError extends PaylinkError {
  * Thrown by `webhooks.verify()` when a webhook payload's signature does not
  * match the value recomputed from the `hashToken`.
  */
-export class PaylinkSignatureError extends PaylinkError {
+export class GetpayinSignatureError extends GetpayinError {
   constructor(message = 'Webhook signature verification failed.') {
     super(message);
-    this.name = 'PaylinkSignatureError';
+    this.name = 'GetpayinSignatureError';
   }
 }
 
@@ -105,9 +105,9 @@ export class PaylinkSignatureError extends PaylinkError {
  * Thrown when the request never produced an HTTP response — a network failure,
  * DNS error, or the configured timeout elapsing before the server replied.
  */
-export class PaylinkConnectionError extends PaylinkError {
+export class GetpayinConnectionError extends GetpayinError {
   constructor(message: string, options?: { cause?: unknown }) {
     super(message, options);
-    this.name = 'PaylinkConnectionError';
+    this.name = 'GetpayinConnectionError';
   }
 }

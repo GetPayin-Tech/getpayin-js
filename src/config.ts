@@ -1,4 +1,4 @@
-import { PaylinkConfigError } from './errors';
+import { GetpayinConfigError } from './errors';
 
 /** Minimal subset of the response object the SDK relies on. */
 export interface FetchResponse {
@@ -20,7 +20,7 @@ export type FetchLike = (
 ) => Promise<FetchResponse>;
 
 /**
- * Configuration for {@link PaylinkClient}.
+ * Configuration for {@link GetpayinClient}.
  *
  * - `publicToken` — identifies the integration; sent as `token` on every request.
  * - `hashToken` — secret signing key; server-side only, never expose to a browser.
@@ -33,7 +33,7 @@ export type FetchLike = (
  * - `fetch` — custom `fetch` implementation; defaults to the global `fetch`
  *   (Node 18+). Useful for injecting a mock in tests or a proxy-aware client.
  */
-export interface PaylinkClientConfig {
+export interface GetpayinClientConfig {
   publicToken: string;
   hashToken: string;
   baseUrl?: string;
@@ -58,27 +58,27 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_MAX_RETRIES = 2;
 const DEFAULT_RETRY_BASE_DELAY_MS = 250;
 
-export function resolveConfig(config: PaylinkClientConfig): ResolvedConfig {
+export function resolveConfig(config: GetpayinClientConfig): ResolvedConfig {
   const publicToken = requireNonEmpty(config.publicToken, 'publicToken');
   const hashToken = requireNonEmpty(config.hashToken, 'hashToken');
 
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
   if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
-    throw new PaylinkConfigError('timeoutMs must be a positive number.');
+    throw new GetpayinConfigError('timeoutMs must be a positive number.');
   }
 
   const maxRetries = config.maxRetries ?? DEFAULT_MAX_RETRIES;
 
   if (!Number.isInteger(maxRetries) || maxRetries < 0) {
-    throw new PaylinkConfigError('maxRetries must be a non-negative integer.');
+    throw new GetpayinConfigError('maxRetries must be a non-negative integer.');
   }
 
   const baseUrl = (config.baseUrl ?? DEFAULT_BASE_URL).replace(/\/+$/, '');
   const fetchImpl = config.fetch ?? (globalThis.fetch as FetchLike | undefined);
 
   if (!fetchImpl) {
-    throw new PaylinkConfigError(
+    throw new GetpayinConfigError(
       'No fetch implementation available. Use Node 18+ or pass `fetch` in the client config.',
     );
   }
@@ -117,7 +117,7 @@ function withHiddenSecret(resolved: ResolvedConfig, hashToken: string): Resolved
 
 function requireNonEmpty(value: string | undefined, name: string): string {
   if (typeof value !== 'string' || value.trim() === '') {
-    throw new PaylinkConfigError(`${name} is required and must be a non-empty string.`);
+    throw new GetpayinConfigError(`${name} is required and must be a non-empty string.`);
   }
 
   return value;

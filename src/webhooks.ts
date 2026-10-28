@@ -1,6 +1,6 @@
 import { coerceToString } from './coerce';
 import type { ResolvedConfig } from './config';
-import { PaylinkError, PaylinkSignatureError } from './errors';
+import { GetpayinError, GetpayinSignatureError } from './errors';
 import { buildSignature, signaturesEqual } from './signature';
 import type { WebhookEvent, WebhookPayload } from './types';
 
@@ -43,10 +43,10 @@ export class Webhooks {
 
   /**
    * Verify an inbound webhook and return the parsed event. Accepts the parsed
-   * JSON body or the raw string. Throws {@link PaylinkSignatureError} if the
+   * JSON body or the raw string. Throws {@link GetpayinSignatureError} if the
    * signature is missing or does not match.
    *
-   * Note: PayLink webhook signatures carry no timestamp, so this does not
+   * Note: GetPayin webhook signatures carry no timestamp, so this does not
    * protect against replay — pair it with your own idempotency on `invoice_id`.
    */
   verify(payload: WebhookPayload | string, options?: VerifyOptions): WebhookEvent {
@@ -56,11 +56,11 @@ export class Webhooks {
     const provided = parsed.signature;
 
     if (typeof provided !== 'string' || provided === '') {
-      throw new PaylinkSignatureError('Webhook payload is missing a signature.');
+      throw new GetpayinSignatureError('Webhook payload is missing a signature.');
     }
 
     if (!signaturesEqual(this.computeSignature(parsed, hashToken), provided)) {
-      throw new PaylinkSignatureError();
+      throw new GetpayinSignatureError();
     }
 
     return this.toEvent(parsed);
@@ -73,7 +73,7 @@ export class Webhooks {
 
       return true;
     } catch (error) {
-      if (error instanceof PaylinkSignatureError) {
+      if (error instanceof GetpayinSignatureError) {
         return false;
       }
 
@@ -101,7 +101,7 @@ export class Webhooks {
     try {
       return JSON.parse(payload) as WebhookPayload;
     } catch (error) {
-      throw new PaylinkError('Webhook payload is not valid JSON.', { cause: error });
+      throw new GetpayinError('Webhook payload is not valid JSON.', { cause: error });
     }
   }
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveConfig } from '../src/config';
-import { PaylinkConfigError } from '../src/errors';
+import { GetpayinConfigError } from '../src/errors';
 
 const base = { publicToken: 'pub', hashToken: 'secret', fetch: async () => ({}) as never };
 
@@ -19,16 +19,16 @@ describe('resolveConfig', () => {
   });
 
   it('rejects a missing or empty publicToken', () => {
-    expect(() => resolveConfig({ ...base, publicToken: '' })).toThrow(PaylinkConfigError);
-    expect(() => resolveConfig({ ...base, publicToken: '   ' })).toThrow(PaylinkConfigError);
+    expect(() => resolveConfig({ ...base, publicToken: '' })).toThrow(GetpayinConfigError);
+    expect(() => resolveConfig({ ...base, publicToken: '   ' })).toThrow(GetpayinConfigError);
   });
 
   it('rejects a missing hashToken', () => {
-    expect(() => resolveConfig({ ...base, hashToken: '' })).toThrow(PaylinkConfigError);
+    expect(() => resolveConfig({ ...base, hashToken: '' })).toThrow(GetpayinConfigError);
   });
 
   it('rejects a non-positive timeout', () => {
-    expect(() => resolveConfig({ ...base, timeoutMs: 0 })).toThrow(PaylinkConfigError);
-    expect(() => resolveConfig({ ...base, timeoutMs: -1 })).toThrow(PaylinkConfigError);
+    expect(() => resolveConfig({ ...base, timeoutMs: 0 })).toThrow(GetpayinConfigError);
+    expect(() => resolveConfig({ ...base, timeoutMs: -1 })).toThrow(GetpayinConfigError);
   });
 });

@@ -9,11 +9,13 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- Hosted card fields: a `@getpayin/getpayin/fields` entry point (`loadFields`, `loadFieldsSdk`) that mounts PayLink's card fields in your own page, fully typed, plus `mode: 'fields'` on `invoices.create` and the `fields` block it returns. It is a separate entry point because it runs in the payer's browser and must never pull in the signing code the main export holds; the browser bundle contains no reference to `hashToken`. The SDK script itself is loaded from PayLink rather than vendored, so it cannot drift from the API it talks to. Wallets stay on `checkoutUrl` — Apple Pay needs the serving domain verified, and that domain is PayLink's.
+- Optional `tokenize` field on `invoices.create` (`tokenize?: boolean`), and `tokenizationId` on the result. Keeps the payer's card as well as charging it — one checkout, one authorization — instead of running a separate `cards.tokenize` and taking a second hold. Like `paymentMode` and `iframe` it is an unsigned passthrough, so adopting it does not change the string an existing integration signs; a golden-signature fixture pins that. The payer's "save my card" consent governs the card, not the sale: unticked, the payment still completes and no card is kept.
 - Optional `iframe` field on `invoices.create` (`iframe?: boolean | number`). Like `paymentMode`, it is an unsigned passthrough — sent in the request body but excluded from the HMAC signature. Set `iframe: true` to request a checkout suitable for embedding.
 - Retry with exponential backoff and full jitter for transient failures (429, 5xx, network errors, timeouts), honoring `Retry-After`. Only replay-safe requests are retried — GETs, calls carrying an `Idempotency-Key`, and pure reads such as `payments.checkStatus`. Charges are never replayed.
 - `maxRetries` client option (default `2`; `0` disables).
-- `PaylinkApiError.retryAfterMs` and `PaylinkApiError.isRateLimited`.
-- `User-Agent: paylink-js/<version> node/<version>` on every request.
+- `GetpayinApiError.retryAfterMs` and `GetpayinApiError.isRateLimited`.
+- `User-Agent: getpayin-js/<version> node/<version>` on every request.
 - `RevokeTokenParams` type, exported.
 - Tooling: ESLint, Prettier, coverage thresholds, `publint` + `attw` export validation, and a smoke test that loads the built `dist/` in both ESM and CJS.
 

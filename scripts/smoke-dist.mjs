@@ -19,14 +19,14 @@ const builds = [
 ];
 
 for (const [label, mod] of builds) {
-  assert.equal(typeof mod.PaylinkClient, 'function', `${label}: PaylinkClient is not exported`);
+  assert.equal(typeof mod.GetpayinClient, 'function', `${label}: GetpayinClient is not exported`);
 
   for (const name of [
-    'PaylinkError',
-    'PaylinkConfigError',
-    'PaylinkApiError',
-    'PaylinkSignatureError',
-    'PaylinkConnectionError',
+    'GetpayinError',
+    'GetpayinConfigError',
+    'GetpayinApiError',
+    'GetpayinSignatureError',
+    'GetpayinConnectionError',
   ]) {
     assert.equal(typeof mod[name], 'function', `${label}: ${name} is not exported`);
   }
@@ -37,7 +37,7 @@ for (const [label, mod] of builds) {
     `${label}: WebhookEventType is not exported as a runtime value`,
   );
 
-  const client = new mod.PaylinkClient({ publicToken: 'pub_smoke', hashToken: SECRET });
+  const client = new mod.GetpayinClient({ publicToken: 'pub_smoke', hashToken: SECRET });
 
   for (const namespace of ['invoices', 'payments', 'vcc', 'cards', 'recurring', 'webhooks']) {
     assert.ok(client[namespace], `${label}: client.${namespace} is missing`);
@@ -51,8 +51,8 @@ for (const [label, mod] of builds) {
   );
 
   // Error subclasses must survive bundling for `instanceof` narrowing to work.
-  const apiError = new mod.PaylinkApiError('boom', { status: 429 });
-  assert.ok(apiError instanceof mod.PaylinkError, `${label}: error prototype chain is broken`);
+  const apiError = new mod.GetpayinApiError('boom', { status: 429 });
+  assert.ok(apiError instanceof mod.GetpayinError, `${label}: error prototype chain is broken`);
   assert.equal(apiError.isRateLimited, true, `${label}: isRateLimited getter is missing`);
 }
 

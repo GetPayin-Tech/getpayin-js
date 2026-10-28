@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { FetchLike } from '../src/config';
-import { PaylinkApiError, PaylinkConnectionError } from '../src/errors';
+import { GetpayinApiError, GetpayinConnectionError } from '../src/errors';
 import { execute, USER_AGENT } from '../src/http';
 import { VERSION } from '../src/version';
 import { fakeConfig, fakeFetch } from './helpers';
@@ -71,7 +71,7 @@ describe('retry', () => {
         path: '/api/v2/integration/vcc/charge',
         body: {},
       }),
-    ).rejects.toBeInstanceOf(PaylinkApiError);
+    ).rejects.toBeInstanceOf(GetpayinApiError);
 
     expect(calls()).toBe(1);
   });
@@ -94,7 +94,7 @@ describe('retry', () => {
 
     await expect(
       execute(fakeConfig({ fetch, ...noDelay }), { method: 'GET', path: '/x' }),
-    ).rejects.toBeInstanceOf(PaylinkApiError);
+    ).rejects.toBeInstanceOf(GetpayinApiError);
 
     expect(calls()).toBe(1);
   });
@@ -105,9 +105,9 @@ describe('retry', () => {
     const error = (await execute(fakeConfig({ fetch, maxRetries: 2, ...noDelay }), {
       method: 'GET',
       path: '/x',
-    }).catch((e) => e)) as PaylinkApiError;
+    }).catch((e) => e)) as GetpayinApiError;
 
-    expect(error).toBeInstanceOf(PaylinkApiError);
+    expect(error).toBeInstanceOf(GetpayinApiError);
     expect(error.isRateLimited).toBe(true);
     expect(calls()).toBe(3);
   });
@@ -117,7 +117,7 @@ describe('retry', () => {
 
     await expect(
       execute(fakeConfig({ fetch, maxRetries: 0, ...noDelay }), { method: 'GET', path: '/x' }),
-    ).rejects.toBeInstanceOf(PaylinkApiError);
+    ).rejects.toBeInstanceOf(GetpayinApiError);
 
     expect(calls()).toBe(1);
   });
@@ -160,7 +160,7 @@ describe('retry', () => {
         path: '/x',
         signal: controller.signal,
       }),
-    ).rejects.toBeInstanceOf(PaylinkConnectionError);
+    ).rejects.toBeInstanceOf(GetpayinConnectionError);
 
     expect(calls).toBe(1);
   });
@@ -173,7 +173,7 @@ describe('Retry-After', () => {
     const error = (await execute(fakeConfig({ fetch, maxRetries: 0 }), {
       method: 'GET',
       path: '/x',
-    }).catch((e) => e)) as PaylinkApiError;
+    }).catch((e) => e)) as GetpayinApiError;
 
     expect(error.retryAfterMs).toBe(2000);
   });
@@ -185,7 +185,7 @@ describe('Retry-After', () => {
     const error = (await execute(fakeConfig({ fetch, maxRetries: 0 }), {
       method: 'GET',
       path: '/x',
-    }).catch((e) => e)) as PaylinkApiError;
+    }).catch((e) => e)) as GetpayinApiError;
 
     expect(error.retryAfterMs).toBeGreaterThan(3000);
     expect(error.retryAfterMs).toBeLessThanOrEqual(5000);
@@ -197,7 +197,7 @@ describe('Retry-After', () => {
     const error = (await execute(fakeConfig({ fetch, maxRetries: 0 }), {
       method: 'GET',
       path: '/x',
-    }).catch((e) => e)) as PaylinkApiError;
+    }).catch((e) => e)) as GetpayinApiError;
 
     expect(error.retryAfterMs).toBeUndefined();
   });
@@ -209,7 +209,7 @@ describe('User-Agent', () => {
     await execute(fakeConfig({ fetch }), { method: 'POST', path: '/x', body: {} });
 
     expect(calls[0]?.headers['User-Agent']).toBe(USER_AGENT);
-    expect(calls[0]?.headers['User-Agent']).toContain(`paylink-js/${VERSION}`);
+    expect(calls[0]?.headers['User-Agent']).toContain(`getpayin-js/${VERSION}`);
   });
 });
 

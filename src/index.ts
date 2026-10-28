@@ -1,13 +1,13 @@
-export { PaylinkClient } from './client';
+export { GetpayinClient } from './client';
 
-export type { PaylinkClientConfig, FetchLike, FetchResponse } from './config';
+export type { GetpayinClientConfig, FetchLike, FetchResponse } from './config';
 
 export {
-  PaylinkError,
-  PaylinkConfigError,
-  PaylinkApiError,
-  PaylinkSignatureError,
-  PaylinkConnectionError,
+  GetpayinError,
+  GetpayinConfigError,
+  GetpayinApiError,
+  GetpayinSignatureError,
+  GetpayinConnectionError,
 } from './errors';
 
 export { WebhookEventType } from './types';

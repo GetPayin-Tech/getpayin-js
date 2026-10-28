@@ -35,7 +35,7 @@ the order of keys in the endpoint's FormRequest `rules()` method**, minus
 When you touch an endpoint:
 
 1. Open the matching FormRequest under
-   `app/Http/Requests/Application/ExternalPaymentIntegration/` in the PayLink
+   `app/Http/Requests/Application/ExternalPaymentIntegration/` in the GetPayin
    repo and read `rules()` top to bottom.
 2. Mirror that order in `fieldOrders.ts`. The `sdk` key is checked against the
    params interface, so a typo is a compile error — but **order is not something

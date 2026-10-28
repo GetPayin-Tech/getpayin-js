@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /**
  * Generates golden signature vectors that prove the JS SDK computes signatures
- * byte-for-byte identical to the PayLink server. This uses the SAME primitive
+ * byte-for-byte identical to the GetPayin server. This uses the SAME primitive
  * the server uses — base64_encode(hash_hmac('sha256', implode('', $values),
  * $hashToken, true)) — with NO Laravel/DB dependency.
  *
@@ -35,6 +35,20 @@ $cases = [
             'orderDetails' => 'note', 'paymentMode' => 'authorize',
         ],
         'values' => ['John', 'Doe', 'john@example.com', 'Gold Plan', '250', '1 Main St', 'Cairo', 'EG', 'C', 'USD', 'https://shop.example.com/return', 'https://shop.example.com/webhook', 'note'],
+    ],
+    [
+        // Same signed values as "invoices.create minimal" below, on purpose. `tokenize` is sent
+        // but never signed, so an integration already live can start keeping cards without
+        // touching its signing code — and if that ever stops being true, these two cases stop
+        // agreeing.
+        'name' => 'invoices.create with tokenize (unsigned passthrough)',
+        'endpoint' => 'INVOICE_CREATE',
+        'input' => [
+            'firstName' => 'Jane', 'lastName' => 'Roe', 'email' => 'jane@example.com',
+            'orderTitle' => 'Basic', 'orderAmount' => '100.00', 'currency' => 'EGP',
+            'tokenize' => true,
+        ],
+        'values' => ['Jane', 'Roe', 'jane@example.com', 'Basic', '100.00', 'EGP'],
     ],
     [
         'name' => 'invoices.create minimal (optionals skipped)',

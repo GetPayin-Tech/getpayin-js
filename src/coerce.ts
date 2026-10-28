@@ -1,4 +1,4 @@
-import { PaylinkError } from './errors';
+import { GetpayinError } from './errors';
 
 /**
  * Canonical value → string coercion used for BOTH the signature concatenation
@@ -22,7 +22,7 @@ export function coerceToString(value: unknown): string {
 
   if (typeof value === 'number') {
     if (!Number.isFinite(value)) {
-      throw new PaylinkError(`Cannot serialize non-finite number: ${value}`);
+      throw new GetpayinError(`Cannot serialize non-finite number: ${value}`);
     }
 
     return String(value);
@@ -36,5 +36,5 @@ export function coerceToString(value: unknown): string {
     return value ? '1' : '0';
   }
 
-  throw new PaylinkError(`Cannot serialize value of type ${typeof value}.`);
+  throw new GetpayinError(`Cannot serialize value of type ${typeof value}.`);
 }

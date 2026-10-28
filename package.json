@@ -1,9 +1,8 @@
 {
-  "name": "@getpayin/paylink",
+  "name": "@getpayin/getpayin",
   "version": "0.2.0",
-  "description": "Official server-side Node.js/TypeScript SDK for the PayLink payment integration API (checkouts, payment operations, card tokens, recurring mandates, webhook verification).",
+  "description": "Official server-side Node.js/TypeScript SDK for the GetPayin payment integration API (checkouts, payment operations, card tokens, recurring mandates, webhook verification).",
   "keywords": [
-    "paylink",
     "getpayin",
     "payments",
     "payment-gateway",
@@ -14,11 +13,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GetPayin-Tech/paylink-js.git"
+    "url": "git+https://github.com/GetPayin-Tech/getpayin-js.git"
   },
-  "homepage": "https://github.com/GetPayin-Tech/paylink-js#readme",
+  "homepage": "https://github.com/GetPayin-Tech/getpayin-js#readme",
   "bugs": {
-    "url": "https://github.com/GetPayin-Tech/paylink-js/issues"
+    "url": "https://github.com/GetPayin-Tech/getpayin-js/issues"
   },
   "publishConfig": {
     "access": "public",
@@ -42,6 +41,16 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./fields": {
+      "import": {
+        "types": "./dist/fields/index.d.ts",
+        "default": "./dist/fields/index.js"
+      },
+      "require": {
+        "types": "./dist/fields/index.d.cts",
+        "default": "./dist/fields/index.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -61,7 +70,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "smoke": "node scripts/smoke-dist.mjs",
-    "check:exports": "attw --pack . && publint",
+    "check:exports": "attw --pack . --profile node16 && publint",
     "verify": "npm run lint && npm run format:check && npm run typecheck && npm run test && npm run build && npm run smoke && npm run check:exports",
     "prepublishOnly": "npm run build"
   },
