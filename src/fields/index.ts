@@ -153,9 +153,16 @@ export function loadFieldsSdk(apiBase?: string): Promise<PayLinkGlobal> {
  * }
  * ```
  *
- * Wallets are not available here — Apple Pay needs the domain serving the button verified with
- * Apple, which is PayLink's — so keep the `checkoutUrl` that came back beside the token as the
- * route for those and as the fallback whenever this throws a terminal code.
+ * Wallets come from a second widget rather than from the fields, which tokenise a card and
+ * nothing else. Name `wallets` and the `wallet` container and PayLink mounts one offering those
+ * methods alone; its outcome arrives as a `success` or `declined` event, because a payer who
+ * uses it never calls `pay()`.
+ *
+ * Google Pay works on your origin as it stands. Apple Pay needs the domain showing the button
+ * verified with Apple first — that domain is yours, not PayLink's — so serve PayLink's
+ * association file at your own `/.well-known/apple-developer-merchantid-domain-association` and
+ * it is accepted once they have confirmed it; until then it is dropped and the card fields are
+ * unaffected. Keep `checkoutUrl` as the fallback whenever this throws a terminal code.
  */
 export async function loadFields(options: LoadFieldsOptions): Promise<FieldsInstance> {
   const sdk = await loadFieldsSdk(options.apiBase);

@@ -252,10 +252,35 @@ A few things worth knowing:
   alongside the API it talks to, and the card iframes have to come from the
   origin your capture context was issued for. Pass `apiBase` when your page is
   not served from the same origin as PayLink.
-- **Apple Pay and Google Pay are not available on hosted fields.** Apple
-  requires the domain serving the button to be verified, and that domain is
-  PayLink's. Those payments stay on `checkoutUrl`, which comes back whatever the
-  mode.
+- **Wallets come from a second widget beside the card fields**, not from the
+  fields themselves — they tokenise a card and nothing else. Name the wallets
+  and a container and PayLink mounts one for them alone:
+
+  ```ts
+  const fields = await loadFields({
+    clientToken,
+    number: '#card-number',
+    securityCode: '#card-cvc',
+    wallets: ['GOOGLEPAY'],
+    wallet: '#wallet-button',
+  });
+
+  fields.on('success', (result) => {
+    window.location.href = result.returnUrl!;
+  });
+  ```
+
+  A payer who uses the wallet never calls `pay()`, so its outcome arrives as a
+  `success` or `declined` event rather than a returned promise.
+
+  **Google Pay works on your origin as it stands. Apple Pay needs your domain
+  verified first** — Apple fetches an association file from the domain showing
+  the button, and that domain is yours, not PayLink's. Ask PayLink for the file,
+  serve it at your own `/.well-known/apple-developer-merchantid-domain-association`,
+  and `'APPLEPAY'` is accepted once they have confirmed it. Until then it is
+  quietly dropped and the card fields are unaffected. `checkoutUrl` remains the
+  fallback for any browser that cannot run either.
+
 - Hosted fields need a **registered origin** on your integration and the feature
   enabled for your account.
 
