@@ -47,6 +47,10 @@ export interface FieldsEventMap {
   blur: FieldsFocusEvent;
   authenticating: FieldsAuthenticatingEvent;
   charging: Record<string, never>;
+  success: FieldsPayResult;
+  declined: FieldsPayResult;
+  walletready: FieldsWalletReadyEvent;
+  walleterror: unknown;
   error: unknown;
 }
 
@@ -65,6 +69,14 @@ export type FieldsEventName = keyof FieldsEventMap;
  * fields, for per-field settings such as a placeholder.
  *
  * `apiBase` only needs setting when the page is not served from the same origin as PayLink.
+ *
+ * `wallets` asks for a wallet widget beside the card inputs, rendered into the container named by
+ * `wallet`. The card fields cannot present a wallet themselves, so this is a second widget with
+ * its own capture context, offering the wallet alone. Both are needed: naming wallets without a
+ * container, or a container without wallets, leaves the card fields on their own.
+ *
+ * A payer who uses the wallet never touches `pay()`, so its outcome arrives as a `success` or
+ * `declined` event rather than a returned promise. Listen for both.
  */
 export interface FieldsOptions {
   clientToken: string;
@@ -74,6 +86,22 @@ export interface FieldsOptions {
   styles?: Record<string, Record<string, string>>;
   numberOptions?: Record<string, unknown>;
   securityCodeOptions?: Record<string, unknown>;
+  wallets?: WalletMethod[];
+  wallet?: string;
+}
+
+/**
+ * Wallets the fields can put beside the card inputs.
+ *
+ * Google Pay alone. Apple Pay needs its domain-association file served from the domain showing
+ * the button, and that domain is PayLink's rather than yours, so an Apple Pay button on your page
+ * would fail Apple's own check — it stays on the hosted `checkoutUrl`.
+ */
+export type WalletMethod = 'GOOGLEPAY';
+
+/** The wallet widget is up and offering these methods. Nothing has been charged. */
+export interface FieldsWalletReadyEvent {
+  paymentTypes: WalletMethod[];
 }
 
 /** The card's expiry, as the payer typed it. A two-digit year is expanded to four. */
