@@ -111,3 +111,23 @@ export class GetpayinConnectionError extends GetpayinError {
     this.name = 'GetpayinConnectionError';
   }
 }
+
+/**
+ * Thrown before a request leaves the SDK, when the parameters cannot produce a
+ * valid call. Carries the name of the offending SDK field so a caller can point
+ * at its own input rather than parse a message.
+ *
+ * The billing address raises this: a United States or Canadian address must
+ * carry its state and postal code, because the gateway checks them against the
+ * card. Sending the charge without them is worse than failing it — the issuer
+ * sees no address to verify and may decline a payment it would have approved.
+ */
+export class GetpayinValidationError extends GetpayinError {
+  readonly field: string;
+
+  constructor(message: string, field: string) {
+    super(message);
+    this.name = 'GetpayinValidationError';
+    this.field = field;
+  }
+}

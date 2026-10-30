@@ -7,7 +7,15 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- A billing `country` is now matched without regard to case, and the upper-cased value is what gets signed and sent. `us` satisfied neither this SDK's check nor the server's, so `usState` and `postalCode` were quietly dropped and the charge reached the gateway with no address the issuer could verify — an AVS result of "not supplied" on a payment it might otherwise have approved. `US` and `us` are now the same country.
+- A United States or Canadian address missing its state or postal code is refused before the request leaves, with `GetpayinValidationError` naming the field, instead of returning a 422 about a field the caller had no way to know was conditional.
+
 ### Added
+
+- `GetpayinValidationError`, thrown when parameters cannot produce a valid call. Carries `field`, the SDK name of the offending input.
+- `UsBillingAddress` and `CaBillingAddress`, for a caller who knows the country at compile time and wants the conditional fields required by the type. `BillingAddress` keeps them optional because a `country` typed as `string` satisfies every arm of a union, so TypeScript cannot express the rule on its own.
 
 - Wallets beside the hosted card fields: `wallets` and `wallet` on `loadFields`, plus `walletready` / `walleterror` events and a `WalletMethod` type. The fields tokenise a card and nothing else, so a wallet comes from a second widget mounted beside them, offering that method alone. A payer who uses it never calls `pay()`, so its outcome arrives as a `success` or `declined` event. Google Pay works on your own origin; Apple Pay needs the domain showing the button verified with Apple first, which is a one-off step per integration.
 - `success` and `declined` on `FieldsEventMap`. The SDK has always emitted them; they were missing from the type, which wallets make load-bearing because a wallet result has no promise to return through.

@@ -13,6 +13,7 @@ import {
   VCC_CHARGE,
 } from '../src/internal/fieldOrders';
 import type { EndpointSpec } from '../src/internal/fieldOrders';
+import { GetpayinValidationError } from '../src/errors';
 import { buildSignedBody } from '../src/internal/sign-request';
 import golden from './fixtures/golden-signatures.json';
 
@@ -269,5 +270,96 @@ describe('buildSignedBody — body construction rules', () => {
 
     expect(body.card_token).toBe('tok_xyz');
     expect(Object.keys(body).sort()).toEqual(['card_token', 'signature', 'token'].sort());
+  });
+});
+
+describe('billing country', () => {
+  const create = (spec: AnySpec, input: Record<string, unknown>) =>
+    buildSignedBody(spec, input, 'pub_token', golden.hashToken);
+
+  const usCharge = (overrides: Record<string, unknown> = {}) => ({
+    firstName: 'John',
+    lastName: 'Doe',
+    currencyId: 1,
+    price: 1,
+    product: 'p',
+    cardNumber: '4111111111111111',
+    cardExpiryMonth: '12',
+    cardExpiryYear: '2030',
+    country: 'US',
+    address: 'a',
+    city: 'c',
+    usState: 'NY',
+    postalCode: '10001',
+    ...overrides,
+  });
+
+  /**
+   * The country is matched exactly here and again on the server, so a lower-case `us` used to
+   * satisfy neither: the state and postal code were left out and the charge reached the gateway
+   * with no address the issuer could verify.
+   */
+  it('recognises the United States however the country is spelled', () => {
+    for (const country of ['us', 'Us', ' us ']) {
+      const body = create(VCC_CHARGE, usCharge({ country }));
+
+      expect(body.country).toBe('US');
+      expect(body.us_state).toBe('NY');
+      expect(body.postal_code).toBe('10001');
+    }
+  });
+
+  it('recognises Canada however the country is spelled', () => {
+    const body = create(CARD_TOKENIZE, {
+      firstName: 'John',
+      lastName: 'Doe',
+      cardNumber: '4111111111111111',
+      cardExpiryMonth: '06',
+      cardExpiryYear: '2032',
+      country: 'ca',
+      address: 'a',
+      city: 'c',
+      canadaState: 'ON',
+      postalCode: 'M5H 2N2',
+    });
+
+    expect(body.country).toBe('CA');
+    expect(body.canada_state).toBe('ON');
+    expect(body.postal_code).toBe('M5H 2N2');
+  });
+
+  it('signs the upper-cased country, so the server rebuilds the same signature', () => {
+    expect(create(VCC_CHARGE, usCharge({ country: 'us' })).signature).toBe(
+      create(VCC_CHARGE, usCharge({ country: 'US' })).signature,
+    );
+  });
+
+  it('refuses a US or CA address missing the field the issuer checks', () => {
+    const cases: Array<[Record<string, unknown>, string]> = [
+      [{ postalCode: undefined }, 'postalCode'],
+      [{ postalCode: '  ' }, 'postalCode'],
+      [{ usState: undefined }, 'usState'],
+    ];
+
+    for (const [overrides, field] of cases) {
+      expect(() => create(VCC_CHARGE, usCharge(overrides))).toThrowError(GetpayinValidationError);
+
+      try {
+        create(VCC_CHARGE, usCharge(overrides));
+      } catch (error) {
+        expect((error as GetpayinValidationError).field).toBe(field);
+      }
+    }
+  });
+
+  it('leaves a country that is neither US nor CA alone', () => {
+    const body = create(
+      VCC_CHARGE,
+      usCharge({ country: 'eg', usState: undefined, postalCode: undefined }),
+    );
+
+    expect(body.country).toBe('EG');
+    expect(body).not.toHaveProperty('us_state');
+    expect(body).not.toHaveProperty('postal_code');
   });
 });

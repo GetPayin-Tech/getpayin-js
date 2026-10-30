@@ -21,7 +21,18 @@ export interface RequestOverrides {
   signal?: AbortSignal;
 }
 
-/** Billing address fields; `usState`/`canadaState`/`postalCode` apply to US/CA. */
+/**
+ * Billing address fields. `country` is an ISO 3166-1 alpha-2 code and is matched without regard
+ * to case; it is upper-cased before the request is signed and sent.
+ *
+ * `usState` and `postalCode` are **required** when the country is `US`, `canadaState` and
+ * `postalCode` when it is `CA`, and the SDK throws {@link GetpayinValidationError} rather than
+ * send the charge without them — the issuer checks both against the card, and an address it
+ * cannot verify can lose a payment it would otherwise have approved. They are optional on this
+ * type because a `country` typed as `string` satisfies every arm of a union, so TypeScript cannot
+ * express the requirement; {@link UsBillingAddress} and {@link CaBillingAddress} state it for a
+ * caller who knows the country at compile time.
+ */
 export interface BillingAddress {
   country: string;
   address: string;
@@ -29,6 +40,20 @@ export interface BillingAddress {
   usState?: string;
   canadaState?: string;
   postalCode?: string;
+}
+
+/** A United States billing address, with the two fields the gateway requires for it. */
+export interface UsBillingAddress extends BillingAddress {
+  country: 'US';
+  usState: string;
+  postalCode: string;
+}
+
+/** A Canadian billing address, with the two fields the gateway requires for it. */
+export interface CaBillingAddress extends BillingAddress {
+  country: 'CA';
+  canadaState: string;
+  postalCode: string;
 }
 
 /**
