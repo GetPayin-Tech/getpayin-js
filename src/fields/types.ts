@@ -93,9 +93,10 @@ export interface FieldsOptions {
 /**
  * Wallets the fields can put beside the card inputs.
  *
- * Google Pay alone. Apple Pay needs its domain-association file served from the domain showing
- * the button, and that domain is PayLink's rather than yours, so an Apple Pay button on your page
- * would fail Apple's own check — it stays on the hosted `checkoutUrl`.
+ * Google Pay alone today. Apple Pay renders only on a domain whose association file Apple can
+ * fetch from the page showing the button, and that page is yours rather than PayLink's, so it
+ * needs your domain registered with Apple before a button on your page can work; until then Apple
+ * Pay stays on the hosted `checkoutUrl`. Names are matched in capitals.
  */
 export type WalletMethod = 'GOOGLEPAY';
 

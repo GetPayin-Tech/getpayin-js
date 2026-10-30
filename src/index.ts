@@ -8,6 +8,7 @@ export {
   GetpayinApiError,
   GetpayinSignatureError,
   GetpayinConnectionError,
+  GetpayinValidationError,
 } from './errors';
 
 export { WebhookEventType } from './types';
@@ -19,6 +20,8 @@ export type {
   StoredCredentialInitiator,
   RequestOverrides,
   BillingAddress,
+  UsBillingAddress,
+  CaBillingAddress,
   CreateInvoiceParams,
   CreateInvoiceResult,
   InvoiceRef,

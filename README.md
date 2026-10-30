@@ -152,6 +152,10 @@ await getpayin.cards.revoke({ cardToken: token });
 
 For `US` and `CA` billing addresses, also pass the state fields the API
 requires: `usState` + `postalCode` (US) or `canadaState` + `postalCode` (CA).
+The issuer checks both against the card, so the SDK throws
+`GetpayinValidationError` — naming the missing field — rather than send a
+charge it cannot verify. `country` is matched without regard to case and is
+upper-cased before signing, so `us` and `US` are the same country.
 
 ### Keeping the card on a payment the payer is already making
 
