@@ -8,11 +8,11 @@ import type { WebhookEvent, WebhookPayload } from './types';
 const ALWAYS_SIGNED = ['success', 'invoice_id', 'invoice_status', 'message'] as const;
 
 /**
- * Optionally-signed fields, appended in this order only when present.
+ * The fields a recurring mandate adds, in the order the server adds them.
  *
- * ⚠️ Membership here is an EITHER/OR, not an additive safety net. Presence is
- * detected with `hasOwnProperty`, so a field listed here is signed whenever the
- * payload carries it.
+ * ⚠️ Membership here is an EITHER/OR, not an additive safety net. A block is
+ * appended only when its leading field is present, and each field inside it is
+ * signed only when the payload carries it.
  *
  * The server signs by opt-OUT: `PaymentIntegrationWebhookJob` copies the whole
  * payload and `unset()`s a fixed exclusion list before hashing. So a new webhook
@@ -28,7 +28,30 @@ const ALWAYS_SIGNED = ['success', 'invoice_id', 'invoice_status', 'message'] as 
  * in either direction. Fields outside both lists are ignored entirely, so
  * unrelated payload additions are safe.
  */
-const OPTIONAL_SIGNED = ['mandate_id', 'external_reference', 'subscription_status'] as const;
+const MANDATE_SIGNED = ['mandate_id', 'external_reference', 'subscription_status'] as const;
+
+/**
+ * The fields a card-token event adds, in the order the server adds them.
+ *
+ * `card_token.created` and `card_token.failed` are the only events that carry a
+ * tokenization, and both are on by default for every integration. The server
+ * writes `tokenization_id` and `external_reference` first, then the card's
+ * details — and only when the card was actually vaulted, so a failed
+ * tokenization signs the first two alone.
+ *
+ * Order matters because the signature is a separator-less concatenation: on an
+ * event with no mandate, `external_reference` is signed AFTER `tokenization_id`,
+ * not at the position it holds on a subscription event.
+ */
+const TOKENIZATION_SIGNED = [
+  'tokenization_id',
+  'external_reference',
+  'card_token',
+  'card_brand',
+  'card_last4',
+  'card_exp_month',
+  'card_exp_year',
+] as const;
 
 /**
  * Options for {@link Webhooks.verify}. `hashToken` overrides the client's
@@ -82,15 +105,36 @@ export class Webhooks {
   }
 
   private computeSignature(payload: WebhookPayload, hashToken: string): string {
-    const values: string[] = ALWAYS_SIGNED.map((key) => coerceToString(payload[key]));
+    return buildSignature(this.signedValues(payload), hashToken);
+  }
 
-    for (const key of OPTIONAL_SIGNED) {
-      if (Object.prototype.hasOwnProperty.call(payload, key)) {
-        values.push(coerceToString(payload[key]));
+  /**
+   * The signed values in wire order, rebuilt the way the server assembles them.
+   *
+   * `PaymentIntegrationWebhookJob` appends a whole block at a time — the mandate
+   * fields when the invoice belongs to one, the tokenization fields when the
+   * event is about a card — and PHP keeps a key at the position it was first
+   * written. A block is therefore gated on its own leading field rather than on
+   * the individual fields inside it: `external_reference` belongs to whichever
+   * block introduced it, and is never signed twice.
+   */
+  private signedValues(payload: WebhookPayload): string[] {
+    const has = (key: string): boolean => Object.prototype.hasOwnProperty.call(payload, key);
+    const keys: string[] = [...ALWAYS_SIGNED];
+
+    for (const block of [MANDATE_SIGNED, TOKENIZATION_SIGNED]) {
+      if (!has(block[0])) {
+        continue;
+      }
+
+      for (const key of block) {
+        if (has(key) && !keys.includes(key)) {
+          keys.push(key);
+        }
       }
     }
 
-    return buildSignature(values, hashToken);
+    return keys.map((key) => coerceToString(payload[key]));
   }
 
   private parse(payload: WebhookPayload | string): WebhookPayload {
@@ -118,6 +162,12 @@ export class Webhooks {
       mandateId: payload.mandate_id,
       externalReference: payload.external_reference,
       subscriptionStatus: payload.subscription_status,
+      tokenizationId: payload.tokenization_id,
+      cardToken: payload.card_token,
+      cardBrand: payload.card_brand,
+      cardLast4: payload.card_last4,
+      cardExpMonth: payload.card_exp_month,
+      cardExpYear: payload.card_exp_year,
       raw: payload,
     };
   }

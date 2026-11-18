@@ -302,6 +302,8 @@ export const WebhookEventType = {
   VccPaymentFailed: 'vcc.payment_failed',
   CardTokenChargeSucceeded: 'card_token.charge_succeeded',
   CardTokenChargeFailed: 'card_token.charge_failed',
+  CardTokenCreated: 'card_token.created',
+  CardTokenFailed: 'card_token.failed',
 } as const;
 
 export type WebhookEventName = (typeof WebhookEventType)[keyof typeof WebhookEventType];
@@ -319,6 +321,12 @@ export interface WebhookPayload {
   mandate_id?: string;
   external_reference?: string;
   subscription_status?: string;
+  tokenization_id?: string;
+  card_token?: string;
+  card_brand?: string;
+  card_last4?: string;
+  card_exp_month?: string;
+  card_exp_year?: string;
   signature?: string;
   [key: string]: unknown;
 }
@@ -336,5 +344,11 @@ export interface WebhookEvent {
   mandateId?: string;
   externalReference?: string;
   subscriptionStatus?: string;
+  tokenizationId?: string;
+  cardToken?: string;
+  cardBrand?: string;
+  cardLast4?: string;
+  cardExpMonth?: string;
+  cardExpYear?: string;
   raw: WebhookPayload;
 }

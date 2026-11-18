@@ -39,6 +39,55 @@ describe('Webhooks.verify', () => {
     expect(event.raw.event).toBe('subscription.charged');
   });
 
+  it('exposes the saved card from a card_token.created event', () => {
+    const event = webhooks.verify(payloadFor('card_token.created'));
+
+    expect(event.event).toBe(WebhookEventType.CardTokenCreated);
+    expect(event.tokenizationId).toBe('TKZ-4f21');
+    expect(event.cardToken).toBe('CRD-9a07');
+    expect(event.cardBrand).toBe('VISA');
+    expect(event.cardLast4).toBe('4242');
+    expect(event.cardExpMonth).toBe('12');
+    expect(event.cardExpYear).toBe('2029');
+    expect(event.externalReference).toBe('cust-42');
+  });
+
+  it('verifies a card_token.failed event, which carries no card at all', () => {
+    const event = webhooks.verify(payloadFor('card_token.failed'));
+
+    expect(event.success).toBe(false);
+    expect(event.tokenizationId).toBe('TKZ-4f22');
+    expect(event.cardToken).toBeUndefined();
+    expect(event.cardLast4).toBeUndefined();
+  });
+
+  it('throws when a card field is tampered with, proving the card is signed', () => {
+    const payload = payloadFor('card_token.created');
+    payload.card_last4 = '1111';
+
+    expect(() => webhooks.verify(payload)).toThrow(GetpayinSignatureError);
+  });
+
+  it('signs external_reference where the tokenization block puts it, not the mandate slot', () => {
+    const payload = payloadFor('card_token.created');
+    const mandateOrder = [
+      '1',
+      '7781',
+      'REVERSED',
+      'Card stored for future payments.',
+      'cust-42',
+      'TKZ-4f21',
+      'CRD-9a07',
+      'VISA',
+      '4242',
+      '12',
+      '2029',
+    ];
+
+    expect(payload.signature).not.toBe(buildSignature(mandateOrder, HASH_TOKEN));
+    expect(webhooks.isValid(payload)).toBe(true);
+  });
+
   it('verifies a payload delivered as a JSON string', () => {
     const event = webhooks.verify(JSON.stringify(payloadFor('invoice.paid')));
 
