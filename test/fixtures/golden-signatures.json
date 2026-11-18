@@ -437,6 +437,66 @@
             ],
             "hashToken": "test_hash_token_abc123",
             "expected": "rk5BFKdp6JRLCX70/iPThwaybLuHV9t/AXaBRPA/J2E="
+        },
+        {
+            "name": "webhook card_token.created (card vaulted)",
+            "endpoint": "WEBHOOK",
+            "input": {
+                "event": "card_token.created",
+                "event_triggered_at": "2026-11-18T09:15:00+02:00",
+                "timezone": "EET",
+                "success": 1,
+                "invoice_id": 7781,
+                "invoice_status": "REVERSED",
+                "message": "Card stored for future payments.",
+                "tokenization_id": "TKZ-4f21",
+                "external_reference": "cust-42",
+                "card_token": "CRD-9a07",
+                "card_brand": "VISA",
+                "card_last4": "4242",
+                "card_exp_month": "12",
+                "card_exp_year": "2029"
+            },
+            "values": [
+                "1",
+                "7781",
+                "REVERSED",
+                "Card stored for future payments.",
+                "TKZ-4f21",
+                "cust-42",
+                "CRD-9a07",
+                "VISA",
+                "4242",
+                "12",
+                "2029"
+            ],
+            "hashToken": "test_hash_token_abc123",
+            "expected": "07XJec3X2wXLRX0S5ybJzaXv4oLCjEyY/WqomIAqi6o="
+        },
+        {
+            "name": "webhook card_token.failed (no card vaulted)",
+            "endpoint": "WEBHOOK",
+            "input": {
+                "event": "card_token.failed",
+                "event_triggered_at": "2026-11-18T09:16:00+02:00",
+                "timezone": "EET",
+                "success": 0,
+                "invoice_id": 7782,
+                "invoice_status": "UNPAID",
+                "message": "The card could not be stored for future payments.",
+                "tokenization_id": "TKZ-4f22",
+                "external_reference": "cust-43"
+            },
+            "values": [
+                "0",
+                "7782",
+                "UNPAID",
+                "The card could not be stored for future payments.",
+                "TKZ-4f22",
+                "cust-43"
+            ],
+            "hashToken": "test_hash_token_abc123",
+            "expected": "Fm/7wiUagH2Q82ld+dI63zSM8rkGQkQ0GXf4RAdTb/w="
         }
     ]
 }

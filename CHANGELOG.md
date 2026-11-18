@@ -7,6 +7,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-18
+
+### Fixed
+
+- `webhooks.verify()` now accepts `card_token.created` and `card_token.failed`. Both carry the tokenisation and the card it produced, and the server signs all of those fields; this SDK signed none of them, so every card-token webhook failed verification. Both events are on by default for every integration, so any integrator saving cards was receiving webhooks it could not verify.
+
+### Added
+
+- `card_token.created` and `card_token.failed` on `WebhookEventType`.
+- The saved card on `WebhookEvent`: `tokenizationId`, `cardToken`, `cardBrand`, `cardLast4`, `cardExpMonth`, `cardExpYear`, with their snake_case counterparts typed on `WebhookPayload`. Reading the card no longer means reaching into `raw`.
+
 ## [0.4.0] - 2026-10-31
 
 ### Fixed
